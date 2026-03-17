@@ -604,6 +604,89 @@ async def get_stats(request: Request):
             "total_playlists": await db.playlists.count_documents({"client_id": user["id"]})
         }
 
+# --- Ephemeris ---
+SAINTS = {
+    "01-01": "Marie", "01-02": "Basile", "01-03": "Genevieve", "01-04": "Odilon", "01-05": "Edouard",
+    "01-06": "Melchior", "01-07": "Raymond", "01-08": "Lucien", "01-09": "Alix", "01-10": "Guillaume",
+    "01-11": "Paulin", "01-12": "Tatiana", "01-13": "Yvette", "01-14": "Nina", "01-15": "Remi",
+    "01-16": "Marcel", "01-17": "Roseline", "01-18": "Prisca", "01-19": "Marius", "01-20": "Sebastien",
+    "01-21": "Agnes", "01-22": "Vincent", "01-23": "Barnard", "01-24": "Francois", "01-25": "Paul",
+    "01-26": "Paule", "01-27": "Angele", "01-28": "Thomas", "01-29": "Gildas", "01-30": "Martine", "01-31": "Marcelle",
+    "02-01": "Ella", "02-02": "Presentation", "02-03": "Blaise", "02-04": "Veronique", "02-05": "Agathe",
+    "02-06": "Gaston", "02-07": "Eugenie", "02-08": "Jacqueline", "02-09": "Apolline", "02-10": "Arnaud",
+    "02-11": "Notre-Dame", "02-12": "Felix", "02-13": "Beatrice", "02-14": "Valentin", "02-15": "Claude",
+    "02-16": "Julienne", "02-17": "Alexis", "02-18": "Bernadette", "02-19": "Gabin", "02-20": "Aime",
+    "02-21": "Damien", "02-22": "Isabelle", "02-23": "Lazare", "02-24": "Modeste", "02-25": "Romeo",
+    "02-26": "Nestor", "02-27": "Honore", "02-28": "Romain", "02-29": "Auguste",
+    "03-01": "Aubin", "03-02": "Charles", "03-03": "Guenole", "03-04": "Casimir", "03-05": "Olive",
+    "03-06": "Colette", "03-07": "Felicite", "03-08": "Jean", "03-09": "Francoise", "03-10": "Vivien",
+    "03-11": "Rosine", "03-12": "Justine", "03-13": "Rodrigue", "03-14": "Mathilde", "03-15": "Louise",
+    "03-16": "Benedicte", "03-17": "Patrick", "03-18": "Cyrille", "03-19": "Joseph", "03-20": "Herbert",
+    "03-21": "Clemence", "03-22": "Lea", "03-23": "Victorien", "03-24": "Catherine", "03-25": "Humbert",
+    "03-26": "Larissa", "03-27": "Habib", "03-28": "Gontran", "03-29": "Gwladys", "03-30": "Amedee", "03-31": "Benjamin",
+    "04-01": "Hugues", "04-02": "Sandrine", "04-03": "Richard", "04-04": "Isidore", "04-05": "Irene",
+    "04-06": "Marcellin", "04-07": "Baptiste", "04-08": "Julie", "04-09": "Gautier", "04-10": "Fulbert",
+    "04-11": "Stanislas", "04-12": "Jules", "04-13": "Ida", "04-14": "Maxime", "04-15": "Paterne",
+    "04-16": "Benoit-Joseph", "04-17": "Anicet", "04-18": "Parfait", "04-19": "Emma", "04-20": "Odette",
+    "04-21": "Anselme", "04-22": "Alexandre", "04-23": "Georges", "04-24": "Fidele", "04-25": "Marc",
+    "04-26": "Alida", "04-27": "Zita", "04-28": "Valerie", "04-29": "Catherine", "04-30": "Robert",
+    "05-01": "Fete du Travail", "05-02": "Boris", "05-03": "Philippe", "05-04": "Sylvain", "05-05": "Judith",
+    "05-06": "Prudence", "05-07": "Gisele", "05-08": "Victoire 1945", "05-09": "Pacifique", "05-10": "Solange",
+    "05-11": "Estelle", "05-12": "Achille", "05-13": "Rolande", "05-14": "Matthias", "05-15": "Denise",
+    "05-16": "Honore", "05-17": "Pascal", "05-18": "Eric", "05-19": "Yves", "05-20": "Bernardin",
+    "05-21": "Constantin", "05-22": "Emile", "05-23": "Didier", "05-24": "Donatien", "05-25": "Sophie",
+    "05-26": "Berenger", "05-27": "Augustin", "05-28": "Germain", "05-29": "Aymar", "05-30": "Ferdinand", "05-31": "Visitation",
+    "06-01": "Justin", "06-02": "Blandine", "06-03": "Kevin", "06-04": "Clotilde", "06-05": "Igor",
+    "06-06": "Norbert", "06-07": "Gilbert", "06-08": "Medard", "06-09": "Diane", "06-10": "Landry",
+    "06-11": "Barnabe", "06-12": "Guy", "06-13": "Antoine", "06-14": "Elisee", "06-15": "Germaine",
+    "06-16": "Jean-Francois", "06-17": "Herve", "06-18": "Leonce", "06-19": "Romuald", "06-20": "Silvere",
+    "06-21": "Rodolphe", "06-22": "Alban", "06-23": "Audrey", "06-24": "Jean-Baptiste", "06-25": "Prosper",
+    "06-26": "Anthelme", "06-27": "Fernand", "06-28": "Irenee", "06-29": "Pierre-Paul", "06-30": "Martial",
+    "07-01": "Thierry", "07-02": "Martinien", "07-03": "Thomas", "07-04": "Florent", "07-05": "Antoine",
+    "07-06": "Mariette", "07-07": "Raoul", "07-08": "Thibaut", "07-09": "Amandine", "07-10": "Ulrich",
+    "07-11": "Benoit", "07-12": "Olivier", "07-13": "Henri", "07-14": "Fete Nationale", "07-15": "Donald",
+    "07-16": "Notre-Dame", "07-17": "Charlotte", "07-18": "Frederic", "07-19": "Arsene", "07-20": "Marina",
+    "07-21": "Victor", "07-22": "Marie-Madeleine", "07-23": "Brigitte", "07-24": "Christine", "07-25": "Jacques",
+    "07-26": "Anne-Joachim", "07-27": "Nathalie", "07-28": "Samson", "07-29": "Marthe", "07-30": "Juliette", "07-31": "Ignace",
+    "08-01": "Alphonse", "08-02": "Julien", "08-03": "Lydie", "08-04": "Jean-Marie", "08-05": "Abel",
+    "08-06": "Transfiguration", "08-07": "Gaetan", "08-08": "Dominique", "08-09": "Amour", "08-10": "Laurent",
+    "08-11": "Claire", "08-12": "Clarisse", "08-13": "Hippolyte", "08-14": "Evrard", "08-15": "Assomption",
+    "08-16": "Armel", "08-17": "Hyacinthe", "08-18": "Helene", "08-19": "Jean-Eudes", "08-20": "Bernard",
+    "08-21": "Christophe", "08-22": "Fabrice", "08-23": "Rose", "08-24": "Barthelemy", "08-25": "Louis",
+    "08-26": "Natacha", "08-27": "Monique", "08-28": "Augustin", "08-29": "Sabine", "08-30": "Fiacre", "08-31": "Aristide",
+    "09-01": "Gilles", "09-02": "Ingrid", "09-03": "Gregoire", "09-04": "Rosalie", "09-05": "Raissa",
+    "09-06": "Bertrand", "09-07": "Reine", "09-08": "Nativite", "09-09": "Alain", "09-10": "Ines",
+    "09-11": "Adelphe", "09-12": "Apollinaire", "09-13": "Aime", "09-14": "Croix Glorieuse", "09-15": "Roland",
+    "09-16": "Edith", "09-17": "Renaud", "09-18": "Nadege", "09-19": "Emilie", "09-20": "Davy",
+    "09-21": "Matthieu", "09-22": "Maurice", "09-23": "Constance", "09-24": "Thecle", "09-25": "Hermann",
+    "09-26": "Come-Damien", "09-27": "Vincent", "09-28": "Venceslas", "09-29": "Michel", "09-30": "Jerome",
+    "10-01": "Therese", "10-02": "Leodegar", "10-03": "Gerard", "10-04": "Francois", "10-05": "Fleur",
+    "10-06": "Bruno", "10-07": "Serge", "10-08": "Pelagie", "10-09": "Denis", "10-10": "Ghislain",
+    "10-11": "Firmin", "10-12": "Wilfrid", "10-13": "Gerald", "10-14": "Juste", "10-15": "Therese",
+    "10-16": "Edwige", "10-17": "Baudouin", "10-18": "Luc", "10-19": "Rene", "10-20": "Adeline",
+    "10-21": "Celine", "10-22": "Elodie", "10-23": "Jean", "10-24": "Florentin", "10-25": "Crepin",
+    "10-26": "Dimitri", "10-27": "Emeline", "10-28": "Simon-Jude", "10-29": "Narcisse", "10-30": "Bienvenu", "10-31": "Quentin",
+    "11-01": "Toussaint", "11-02": "Defunts", "11-03": "Hubert", "11-04": "Charles", "11-05": "Sylvie",
+    "11-06": "Bertille", "11-07": "Carine", "11-08": "Geoffrey", "11-09": "Theodore", "11-10": "Leon",
+    "11-11": "Armistice", "11-12": "Christian", "11-13": "Brice", "11-14": "Sidoine", "11-15": "Albert",
+    "11-16": "Marguerite", "11-17": "Elisabeth", "11-18": "Aude", "11-19": "Tanguy", "11-20": "Edmond",
+    "11-21": "Presentation", "11-22": "Cecile", "11-23": "Clement", "11-24": "Flora", "11-25": "Catherine",
+    "11-26": "Delphine", "11-27": "Sevrin", "11-28": "Jacques", "11-29": "Saturnin", "11-30": "Andre",
+    "12-01": "Florence", "12-02": "Viviane", "12-03": "Xavier", "12-04": "Barbara", "12-05": "Gerald",
+    "12-06": "Nicolas", "12-07": "Ambroise", "12-08": "Immaculee", "12-09": "Pierre", "12-10": "Romaric",
+    "12-11": "Daniel", "12-12": "Jeanne", "12-13": "Lucie", "12-14": "Odile", "12-15": "Ninon",
+    "12-16": "Alice", "12-17": "Gaelle", "12-18": "Gatien", "12-19": "Urbain", "12-20": "Abraham",
+    "12-21": "Pierre", "12-22": "Francoise", "12-23": "Armand", "12-24": "Adele", "12-25": "Noel",
+    "12-26": "Etienne", "12-27": "Jean", "12-28": "Innocents", "12-29": "David", "12-30": "Roger", "12-31": "Sylvestre",
+}
+
+@api_router.get("/ephemeris")
+async def get_ephemeris():
+    now = datetime.now(timezone.utc)
+    key = now.strftime("%m-%d")
+    saint = SAINTS.get(key, "")
+    return {"date": now.isoformat(), "saint": saint, "day_key": key}
+
 # --- Serve uploaded files ---
 @api_router.get("/uploads/{filename}")
 async def serve_upload(filename: str):
