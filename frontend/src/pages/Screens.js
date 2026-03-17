@@ -7,7 +7,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Plus, Trash2, Monitor, Copy, Wifi, WifiOff, Tag } from 'lucide-react';
+import { Plus, Trash2, Monitor, Copy, Wifi, WifiOff, Tag, ExternalLink, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Screens() {
@@ -171,7 +171,16 @@ export default function Screens() {
                   </div>
                 )}
 
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`/display/${screen.pairing_code}`, '_blank')}
+                    data-testid={`preview-screen-${screen.id}`}
+                    className="gap-1.5"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" /> Voir l'ecran
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
