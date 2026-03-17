@@ -1,0 +1,160 @@
+{
+  "identity": {
+    "name": "Intensiti Design System",
+    "persona": "E1 - The Soft Swiss",
+    "vibe": "Clean, Organized, Professional, Efficient",
+    "description": "A high-precision interface for managing digital chaos. Visually quiet to allow the content (images/videos) to speak. Interaction design is snappy and immediate."
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Outfit, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "installation": "IMPORTS: @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap');",
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-bold tracking-tight",
+      "h2": "text-3xl font-semibold tracking-tight",
+      "h3": "text-2xl font-semibold tracking-normal",
+      "h4": "text-xl font-medium",
+      "body": "text-sm md:text-base leading-relaxed text-slate-600",
+      "small": "text-xs font-medium text-slate-500 uppercase tracking-wider"
+    },
+    "rules": "Use Outfit for all Headings (h1-h4) and Navigation links. Use Inter for all body text, inputs, and tables. Use JetBrains Mono for pairing codes and technical IDs."
+  },
+  "colors": {
+    "palette": {
+      "primary": {
+        "DEFAULT": "#4F46E5",
+        "foreground": "#FFFFFF",
+        "hover": "#4338CA"
+      },
+      "secondary": {
+        "DEFAULT": "#F1F5F9",
+        "foreground": "#0F172A",
+        "hover": "#E2E8F0"
+      },
+      "accent": {
+        "DEFAULT": "#F8FAFC",
+        "foreground": "#0F172A"
+      },
+      "background": "#FFFFFF",
+      "foreground": "#020617",
+      "muted": {
+        "DEFAULT": "#F8FAFC",
+        "foreground": "#64748B"
+      },
+      "border": "#E2E8F0",
+      "destructive": {
+        "DEFAULT": "#E11D48",
+        "foreground": "#FFFFFF"
+      },
+      "success": {
+        "DEFAULT": "#10B981",
+        "foreground": "#FFFFFF"
+      },
+      "warning": {
+        "DEFAULT": "#F59E0B",
+        "foreground": "#FFFFFF"
+      }
+    },
+    "usage": {
+      "admin_bg": "bg-slate-50",
+      "card_bg": "bg-white",
+      "sidebar_bg": "bg-white border-r border-slate-200",
+      "header_bg": "bg-white/80 backdrop-blur-md border-b border-slate-200",
+      "active_state": "text-indigo-600 bg-indigo-50",
+      "status_online": "bg-emerald-500",
+      "status_offline": "bg-rose-500"
+    }
+  },
+  "layout": {
+    "spacing_scale": {
+      "section_gap": "gap-8 md:gap-12",
+      "card_padding": "p-6 md:p-8",
+      "input_gap": "gap-4"
+    },
+    "admin_structure": {
+      "wrapper": "flex h-screen bg-slate-50 overflow-hidden",
+      "sidebar": "w-64 hidden md:flex flex-col border-r bg-white",
+      "main": "flex-1 flex flex-col overflow-hidden",
+      "content_area": "flex-1 overflow-y-auto p-6 md:p-10"
+    },
+    "display_structure": {
+      "wrapper": "fixed inset-0 bg-black text-white overflow-hidden",
+      "header_zone": "absolute top-0 left-0 w-full h-[15vh] z-20 flex items-center justify-between px-8 bg-gradient-to-b from-black/50 to-transparent",
+      "main_zone": "absolute inset-0 z-10 flex items-center justify-center",
+      "footer_zone": "absolute bottom-0 left-0 w-full h-[10vh] z-30 bg-black/80 flex items-center overflow-hidden"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm rounded-md px-4 py-2 text-sm font-medium transition-colors",
+      "secondary": "bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 shadow-sm rounded-md px-4 py-2 text-sm font-medium transition-colors",
+      "ghost": "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-md px-4 py-2 text-sm font-medium transition-colors",
+      "destructive": "bg-rose-600 text-white hover:bg-rose-700 shadow-sm rounded-md px-4 py-2 text-sm font-medium transition-colors"
+    },
+    "cards": {
+      "base": "bg-white rounded-xl border border-slate-200 shadow-sm transition-shadow hover:shadow-md",
+      "metric": "p-6 flex flex-col gap-2",
+      "screen_preview": "aspect-video bg-slate-100 rounded-lg border border-slate-200 overflow-hidden relative group"
+    },
+    "inputs": {
+      "base": "flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+      "label": "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block"
+    }
+  },
+  "features_specific_design": {
+    "screen_dashboard": {
+      "grid": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6",
+      "status_indicator": "h-2 w-2 rounded-full absolute top-4 right-4 ring-2 ring-white"
+    },
+    "playlist_editor": {
+      "layout": "flex h-[calc(100vh-100px)] gap-6",
+      "library_panel": "w-80 border-r border-slate-200 pr-4 overflow-y-auto",
+      "timeline_area": "flex-1 bg-slate-100 rounded-lg p-6 overflow-x-auto flex items-center gap-4",
+      "slide_card": "w-48 aspect-video bg-white shadow-sm rounded-md flex-shrink-0 border-2 border-transparent hover:border-indigo-500 cursor-grab active:cursor-grabbing relative group"
+    },
+    "weather_widget": {
+      "style": "flex items-center gap-3 text-white drop-shadow-md",
+      "icon": "w-10 h-10"
+    }
+  },
+  "assets": {
+    "icons_library": "lucide-react",
+    "image_urls": {
+      "login_bg": "https://images.unsplash.com/photo-1636125658784-8c7adc0f7ff1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzh8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBvZmZpY2UlMjBsb2JieSUyMGRpZ2l0YWwlMjBzaWduYWdlfGVufDB8fHx8MTc3Mzc1MjUwOHww&ixlib=rb-4.1.0&q=85",
+      "dashboard_hero": "https://images.unsplash.com/photo-1764795850248-97a5e986b242?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwxfHxyZXRhaWwlMjBzdG9yZSUyMGRpZ2l0YWwlMjBkaXNwbGF5fGVufDB8fHx8MTc3Mzc1MjUwOHww&ixlib=rb-4.1.0&q=85",
+      "placeholder_slide_1": "https://images.unsplash.com/photo-1579356687668-cbdd5a551c18?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzh8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBvZmZpY2UlMjBsb2JieSUyMGRpZ2l0YWwlMjBzaWduYWdlfGVufDB8fHx8MTc3Mzc1MjUwOHww&ixlib=rb-4.1.0&q=85",
+      "placeholder_slide_2": "https://images.unsplash.com/photo-1684831652071-094a540554f0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzh8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBvZmZpY2UlMjBsb2JieSUyMGRpZ2l0YWwlMjBzaWduYWdlfGVufDB8fHx8MTc3Mzc1MjUwOHww&ixlib=rb-4.1.0&q=85"
+    }
+  },
+  "motion": {
+    "page_transition": {
+      "initial": { "opacity": 0, "y": 20 },
+      "animate": { "opacity": 1, "y": 0 },
+      "exit": { "opacity": 0, "y": -20 },
+      "transition": { "duration": 0.3, "ease": "easeOut" }
+    },
+    "slide_transition": {
+      "fade": { "duration": 1 },
+      "slide": { "type": "spring", "stiffness": 100, "damping": 20 }
+    }
+  },
+  "universal_guidelines": {
+    "general": "Do not use 'airplane cockpit' density. Keep it sparse. Every screen must have a clear primary action.",
+    "language": "Interface text must be in French (Français).",
+    "accessibility": "Ensure high contrast on the Player view (white text on dark backgrounds with drop shadows).",
+    "components_path": "/app/frontend/src/components/ui",
+    "layout_rule": "Use 'flex' and 'grid' pervasively. Avoid absolute positioning except in the 'Screen Display View'.",
+    "testing": "All interactive elements must have data-testid attributes (e.g., 'login-submit-btn', 'playlist-add-slide-btn')."
+  },
+  "instructions_to_main_agent": [
+    "Install 'lucide-react' for icons.",
+    "Use 'framer-motion' for transitions.",
+    "Implement the 'Screen Display View' as a separate route (e.g., /display/:code) that removes all admin UI chrome.",
+    "Ensure the Admin Dashboard uses the Light Theme defined in 'colors'.",
+    "The 'Playlist Editor' should support drag-and-drop reordering (use 'dnd-kit' or similar if possible, or simple array manipulation).",
+    "Respect the 'French Language' constraint for all labels."
+  ]
+}
