@@ -78,6 +78,8 @@ class PlaylistUpdate(BaseModel):
     name: Optional[str] = None
     slides: Optional[List[Dict[str, Any]]] = None
     is_active: Optional[bool] = None
+    schedule_start: Optional[str] = None
+    schedule_end: Optional[str] = None
 
 class FlashAlertCreate(BaseModel):
     message: str
@@ -90,7 +92,19 @@ class SettingsUpdate(BaseModel):
     header_bg: Optional[str] = None
     footer_bg: Optional[str] = None
     text_color: Optional[str] = None
-    footer_text: Optional[str] = None
+    content_bg: Optional[str] = None
+    block_bg: Optional[str] = None
+    block_text_color: Optional[str] = None
+    time_font_size: Optional[int] = None
+    date_font_size: Optional[int] = None
+    weather_font_size: Optional[int] = None
+    footer_font_size: Optional[int] = None
+    header_height: Optional[int] = None
+    footer_height: Optional[int] = None
+    block_padding_v: Optional[int] = None
+    block_padding_h: Optional[int] = None
+    default_slide_duration: Optional[int] = None
+    footer_items: Optional[List[Dict[str, Any]]] = None
     footer_rss_url: Optional[str] = None
 
 class YouTubeMediaCreate(BaseModel):
@@ -203,10 +217,22 @@ async def create_client(data: ClientCreate, request: Request):
         "logo_url": "",
         "primary_color": "#4F46E5",
         "secondary_color": "#F1F5F9",
-        "header_bg": "#1E293B",
-        "footer_bg": "#1E293B",
+        "header_bg": "#0F172A",
+        "footer_bg": "#0F172A",
         "text_color": "#FFFFFF",
-        "footer_text": "Bienvenue",
+        "content_bg": "#000000",
+        "block_bg": "rgba(255,255,255,0.06)",
+        "block_text_color": "#FFFFFF",
+        "time_font_size": 32,
+        "date_font_size": 14,
+        "weather_font_size": 18,
+        "footer_font_size": 15,
+        "header_height": 72,
+        "footer_height": 44,
+        "block_padding_v": 6,
+        "block_padding_h": 14,
+        "default_slide_duration": 10,
+        "footer_items": [{"id": str(uuid.uuid4()), "text": "Bienvenue", "is_active": True, "order": 0}],
         "footer_rss_url": ""
     }
     await db.client_settings.insert_one(settings)
@@ -461,6 +487,25 @@ async def delete_playlist(playlist_id: str, request: Request):
     await db.screens.update_many({"playlist_id": playlist_id}, {"$set": {"playlist_id": None}})
     return {"message": "Playlist supprimee"}
 
+@api_router.post("/playlists/{playlist_id}/duplicate")
+async def duplicate_playlist(playlist_id: str, request: Request):
+    user = await get_current_user(request)
+    playlist = await db.playlists.find_one({"id": playlist_id}, {"_id": 0})
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist non trouvee")
+    if user["role"] != "super_admin" and playlist["client_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Acces non autorise")
+    import copy
+    new_playlist = copy.deepcopy(playlist)
+    new_playlist["id"] = str(uuid.uuid4())
+    new_playlist["name"] = f"{playlist['name']} (copie)"
+    new_playlist["created_at"] = datetime.now(timezone.utc).isoformat()
+    for slide in new_playlist.get("slides", []):
+        slide["id"] = str(uuid.uuid4())
+    await db.playlists.insert_one(new_playlist)
+    new_playlist.pop("_id", None)
+    return new_playlist
+
 # --- Display ---
 @api_router.get("/display/{code}")
 async def get_display_data(code: str):
@@ -509,6 +554,62 @@ async def get_weather(city: str = "Paris"):
         except Exception as e:
             logger.error(f"Weather API error: {e}")
             return {"error": str(e), "temp": None}
+
+@api_router.get("/weather/forecast")
+async def get_weather_forecast(city: str = "Paris"):
+    if not OPENWEATHER_KEY:
+        return {"error": "Cle API meteo non configuree", "forecast": []}
+    async with httpx.AsyncClient() as http_client:
+        try:
+            response = await http_client.get(
+                "https://api.openweathermap.org/data/2.5/forecast",
+                params={"q": city, "appid": OPENWEATHER_KEY, "units": "metric", "lang": "fr", "cnt": 32},
+                timeout=10
+            )
+            response.raise_for_status()
+            data = response.json()
+            # Extract one forecast per day (noon) for next 3 days
+            daily = {}
+            for item in data.get("list", []):
+                dt = datetime.fromisoformat(item["dt_txt"].replace(" ", "T"))
+                day_key = dt.strftime("%Y-%m-%d")
+                today_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                if day_key == today_key:
+                    continue
+                if day_key not in daily:
+                    daily[day_key] = {
+                        "date": day_key,
+                        "day_name": dt.strftime("%A"),
+                        "temp_min": item["main"]["temp_min"],
+                        "temp_max": item["main"]["temp_max"],
+                        "icon": item["weather"][0]["icon"],
+                        "description": item["weather"][0]["description"],
+                    }
+                else:
+                    daily[day_key]["temp_min"] = min(daily[day_key]["temp_min"], item["main"]["temp_min"])
+                    daily[day_key]["temp_max"] = max(daily[day_key]["temp_max"], item["main"]["temp_max"])
+                if len(daily) >= 3:
+                    break
+            return {"city": data.get("city", {}).get("name", city), "forecast": list(daily.values())[:3]}
+        except Exception as e:
+            logger.error(f"Forecast API error: {e}")
+            return {"error": str(e), "forecast": []}
+
+# --- RSS Feed ---
+@api_router.get("/rss")
+async def fetch_rss(url: str = ""):
+    if not url:
+        return {"items": []}
+    import feedparser
+    async with httpx.AsyncClient() as http_client:
+        try:
+            response = await http_client.get(url, timeout=15, follow_redirects=True)
+            feed = feedparser.parse(response.text)
+            items = [entry.get("title", "") for entry in feed.entries[:20] if entry.get("title")]
+            return {"items": items}
+        except Exception as e:
+            logger.error(f"RSS fetch error: {e}")
+            return {"items": [], "error": str(e)}
 
 # --- Flash Alert ---
 @api_router.post("/flash-alert")

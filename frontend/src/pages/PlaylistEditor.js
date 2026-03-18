@@ -33,9 +33,8 @@ const TRANSITIONS = [
 ];
 const LAYOUTS = [
   { value: 'full', label: '100%' },
-  { value: 'split-left', label: '50% Gauche' },
-  { value: 'split-right', label: '50% Droite' },
-  { value: 'immersion', label: 'Immersion' },
+  { value: 'split', label: '50/50' },
+  { value: 'immersion', label: 'Full Screen' },
 ];
 const FIT_MODES = [
   { value: 'fit', label: 'Ajuster' },
@@ -346,6 +345,22 @@ export default function PlaylistEditor() {
               <RichTextEditor value={slideForm.content.html || ''} onChange={html => setSlideForm({ ...slideForm, content: { ...slideForm.content, html, text: html.replace(/<[^>]+>/g, '') } })} />
             </TabsContent>
           </Tabs>
+
+          {/* 50/50 Right side content */}
+          {slideForm.layout === 'split' && (
+            <div className="pt-4 border-t border-dashed border-slate-200">
+              <Label className="text-sm font-semibold mb-2 block">Contenu droite (50/50)</Label>
+              <div className="grid grid-cols-4 gap-2 max-h-36 overflow-y-auto">
+                {media.filter(m => m.type === 'image' || m.type === 'video').map(m => (
+                  <div key={m.id} onClick={() => setSlideForm({ ...slideForm, content: { ...slideForm.content, right_media_id: m.id, right_url: m.url, right_name: m.name, right_type: m.type } })}
+                    className={`aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${slideForm.content?.right_media_id === m.id ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-300'}`}>
+                    {m.type === 'image' ? <img src={getMediaUrl(m.url)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center"><Film className="h-5 w-5 text-slate-400" /></div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t">
             <div><Label className="text-xs">Duree (s)</Label><Input type="number" value={slideForm.duration} onChange={e => setSlideForm({ ...slideForm, duration: parseInt(e.target.value) || 10 })} min="1" className="mt-1" data-testid="slide-duration-input" /></div>
             <div><Label className="text-xs">Transition</Label><Select value={slideForm.transition} onValueChange={v => setSlideForm({ ...slideForm, transition: v })}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{TRANSITIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select></div>
