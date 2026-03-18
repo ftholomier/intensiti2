@@ -172,15 +172,32 @@ export default function Screens() {
                 )}
 
                 <div className="flex justify-between items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(`/display/${screen.pairing_code}`, '_blank')}
-                    data-testid={`preview-screen-${screen.id}`}
-                    className="gap-1.5"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" /> Voir l'ecran
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/display/${screen.pairing_code}`, '_blank')}
+                      data-testid={`preview-screen-${screen.id}`}
+                      className="gap-1.5"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" /> Voir l'ecran
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await API.post(`/screens/${screen.id}/refresh`);
+                          toast.success('Rafraichissement force');
+                        } catch { toast.error('Erreur'); }
+                      }}
+                      data-testid={`refresh-screen-${screen.id}`}
+                      className="gap-1.5"
+                      title="Forcer le rafraichissement"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"

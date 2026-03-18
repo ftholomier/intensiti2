@@ -349,7 +349,16 @@ async def screen_heartbeat(screen_id: str):
         alert = await db.flash_alerts.find_one(
             {"client_id": screen["client_id"], "is_active": True}, {"_id": 0}
         )
-    return {"status": "ok", "flash_alert": alert}
+    return {"status": "ok", "flash_alert": alert, "force_refresh": screen.get("force_refresh", False)}
+
+@api_router.post("/screens/{screen_id}/refresh")
+async def force_refresh_screen(screen_id: str, request: Request):
+    user = await get_current_user(request)
+    screen = await db.screens.find_one({"id": screen_id}, {"_id": 0})
+    if not screen:
+        raise HTTPException(status_code=404, detail="Ecran non trouve")
+    await db.screens.update_one({"id": screen_id}, {"$set": {"force_refresh": True}})
+    return {"message": "Rafraichissement force"}
 
 # --- Media Management ---
 @api_router.get("/media")

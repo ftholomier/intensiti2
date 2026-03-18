@@ -7,7 +7,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
-import { Plus, ListVideo, Edit, Trash2, Play } from 'lucide-react';
+import { Plus, ListVideo, Edit, Trash2, Play, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Playlists() {
@@ -44,6 +44,16 @@ export default function Playlists() {
       loadPlaylists();
     } catch {
       toast.error('Erreur');
+    }
+  };
+
+  const handleDuplicate = async (id) => {
+    try {
+      await API.post(`/playlists/${id}/duplicate`);
+      toast.success('Playlist dupliquee');
+      loadPlaylists();
+    } catch {
+      toast.error('Erreur lors de la duplication');
     }
   };
 
@@ -98,14 +108,25 @@ export default function Playlists() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/playlists/${pl.id}`)}
-                    data-testid={`edit-playlist-${pl.id}`}
-                  >
-                    <Edit className="h-3.5 w-3.5 mr-1.5" /> Editer
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/playlists/${pl.id}`)}
+                      data-testid={`edit-playlist-${pl.id}`}
+                    >
+                      <Edit className="h-3.5 w-3.5 mr-1.5" /> Editer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDuplicate(pl.id)}
+                      data-testid={`duplicate-playlist-${pl.id}`}
+                      title="Dupliquer"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
