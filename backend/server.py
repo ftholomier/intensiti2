@@ -112,6 +112,7 @@ class SettingsUpdate(BaseModel):
     ticker_speed: Optional[int] = None
     ticker_text_enabled: Optional[bool] = None
     ticker_rss_enabled: Optional[bool] = None
+    default_transition: Optional[str] = None
 
 class YouTubeMediaCreate(BaseModel):
     name: str
@@ -355,11 +356,16 @@ async def screen_heartbeat(screen_id: str):
     )
     screen = await db.screens.find_one({"id": screen_id}, {"_id": 0})
     alert = None
+    force_refresh = False
     if screen:
         alert = await db.flash_alerts.find_one(
             {"client_id": screen["client_id"], "is_active": True}, {"_id": 0}
         )
-    return {"status": "ok", "flash_alert": alert, "force_refresh": screen.get("force_refresh", False)}
+        force_refresh = screen.get("force_refresh", False)
+        # Clear force_refresh flag after reading it
+        if force_refresh:
+            await db.screens.update_one({"id": screen_id}, {"$set": {"force_refresh": False}})
+    return {"status": "ok", "flash_alert": alert, "force_refresh": force_refresh}
 
 @api_router.post("/screens/{screen_id}/refresh")
 async def force_refresh_screen(screen_id: str, request: Request):

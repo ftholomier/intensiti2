@@ -9,6 +9,7 @@ import MediaLibrary from './pages/MediaLibrary';
 import Playlists from './pages/Playlists';
 import PlaylistEditor from './pages/PlaylistEditor';
 import SettingsPage from './pages/Settings';
+import TickerPage from './pages/TickerPage';
 import Display from './pages/Display';
 import './App.css';
 
@@ -75,6 +76,11 @@ function AppRoutes() {
       <Route path="/settings" element={
         <ProtectedRoute allowedRoles={['client']}>
           <SettingsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/ticker" element={
+        <ProtectedRoute allowedRoles={['client']}>
+          <TickerPage />
         </ProtectedRoute>
       } />
 

@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import {
-  LayoutDashboard, Monitor, Image, ListVideo, Settings, Users, LogOut, Zap, Menu, X
+  LayoutDashboard, Monitor, Image, ListVideo, Settings, Users, LogOut, Zap, Menu, X, Newspaper
 } from 'lucide-react';
 import { useState } from 'react';
 import { Toaster } from '../components/ui/sonner';
@@ -16,6 +16,7 @@ export default function AdminLayout({ children }) {
     { to: '/screens', icon: Monitor, label: 'Ecrans' },
     { to: '/media', icon: Image, label: 'Mediatheque' },
     { to: '/playlists', icon: ListVideo, label: 'Playlists' },
+    { to: '/ticker', icon: Newspaper, label: 'Bandeau defilant' },
     { to: '/settings', icon: Settings, label: 'Parametres' },
   ];
 
@@ -118,7 +119,7 @@ export default function AdminLayout({ children }) {
         </div>
       </main>
 
-      <Toaster position="top-right" richColors />
+      <Toaster position="bottom-right" richColors />
     </div>
   );
 }

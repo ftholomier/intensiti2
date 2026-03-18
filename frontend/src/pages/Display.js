@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { getMediaUrl } from '../lib/api';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -61,17 +61,12 @@ function RssSlideContent({ rssUrl }) {
       <div className="text-center max-w-4xl">
         <div className="inline-block px-4 py-1.5 bg-orange-500/20 text-orange-300 rounded-full text-xs uppercase tracking-widest font-medium mb-8">Flux RSS</div>
         <p className="text-3xl md:text-5xl font-bold leading-tight animate-fade-in-display" key={ci}>{items[ci]}</p>
-        <div className="flex justify-center gap-1.5 mt-8">
-          {items.slice(0, 10).map((_, i) => (
-            <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === ci % 10 ? 'w-6 bg-orange-400' : 'w-1.5 bg-white/15'}`} />
-          ))}
-        </div>
       </div>
     </div>
   );
 }
 
-/* PDF Slide: renders all pages sequentially, then signals done */
+/* PDF Slide */
 function PdfSlideContent({ url, pageDuration, onAllPagesShown }) {
   const [numPages, setNumPages] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -97,9 +92,8 @@ function PdfSlideContent({ url, pageDuration, onAllPagesShown }) {
     timerRef.current = setTimeout(() => {
       if (currentPage < numPages) {
         setCurrentPage(p => p + 1);
-      } else {
-        // All pages shown, signal parent
-        if (onAllPagesShown) onAllPagesShown();
+      } else if (onAllPagesShown) {
+        onAllPagesShown();
       }
     }, dur);
     return () => clearTimeout(timerRef.current);
@@ -120,18 +114,13 @@ function PdfSlideContent({ url, pageDuration, onAllPagesShown }) {
       {numPages && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 px-4 py-1.5 rounded-full">
           <span className="text-white text-xs font-medium">{currentPage} / {numPages}</span>
-          <div className="flex gap-1">
-            {Array.from({ length: numPages }, (_, i) => (
-              <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i + 1 === currentPage ? 'w-4 bg-white' : 'w-1 bg-white/30'}`} />
-            ))}
-          </div>
         </div>
       )}
     </div>
   );
 }
 
-/* Single Content Renderer */
+/* Single Content */
 function SingleContent({ type, content, fitMode, onDone }) {
   const c = content || {};
   const fit = fitMode === 'fill' ? 'cover' : 'contain';
@@ -139,7 +128,7 @@ function SingleContent({ type, content, fitMode, onDone }) {
   if (type === 'media' && c.type === 'video') return <video src={getMediaUrl(c.url)} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
   if (type === 'media' && c.type === 'pdf') return <PdfSlideContent url={c.url} pageDuration={c.page_duration} onAllPagesShown={onDone} />;
   if (type === 'youtube') { const ytId = extractYouTubeId(c.url); return ytId ? <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0`} className="absolute inset-0 w-full h-full" frameBorder="0" allow="autoplay" allowFullScreen title="YT" /> : null; }
-  if (type === 'qrcode') return <div className="flex flex-col items-center justify-center h-full"><div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl shadow-white/10"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(c.url || 'https://example.com')}`} alt="QR" className="w-48 h-48 md:w-64 md:h-64" /></div><p className="text-white/40 text-xs mt-4 max-w-xs truncate">{c.url}</p></div>;
+  if (type === 'qrcode') return <div className="flex flex-col items-center justify-center h-full"><div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl shadow-white/10"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(c.url || 'https://example.com')}`} alt="QR" className="w-48 h-48 md:w-64 md:h-64" /></div></div>;
   if (type === 'countdown') return <CountdownWidget targetDate={c.target_date} label={c.label} />;
   if (type === 'text') return <div className="flex items-center justify-center h-full px-8 md:px-20"><div className="display-text-content" dangerouslySetInnerHTML={{ __html: c.html || c.text || '' }} /></div>;
   if (type === 'rss') return <RssSlideContent rssUrl={c.rss_url} />;
@@ -180,14 +169,23 @@ export default function Display() {
   const [err, setErr] = useState(null);
   const stRef = useRef(null);
   const ttRef = useRef(null);
-  const pdfDoneRef = useRef(false);
 
   const fetchData = useCallback(async () => {
     if (!code) return;
     try {
       const r = await fetch(`${BACKEND_URL}/api/display/${code}`);
       if (!r.ok) throw new Error('Ecran non trouve');
-      setData(await r.json()); setErr(null);
+      const d = await r.json();
+      // Handle force_refresh: if flag is set, clear it and force full page reload
+      if (d.screen?.force_refresh) {
+        // Clear the flag via heartbeat
+        fetch(`${BACKEND_URL}/api/screens/${d.screen.id}/heartbeat`, { method: 'POST' }).catch(() => {});
+        // Force reload entire page
+        window.location.reload();
+        return;
+      }
+      setData(d);
+      setErr(null);
     } catch (e) { setErr(e.message); }
   }, [code]);
 
@@ -231,44 +229,53 @@ export default function Display() {
   useEffect(() => { const i = setInterval(fetchRss, 600000); return () => clearInterval(i); }, [fetchRss]);
   useEffect(() => { const i = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(i); }, []);
 
-  const slides = (data?.playlist?.slides || []).filter(s => {
-    if (!s.is_active) return false;
-    const now = new Date();
-    if (s.schedule_start && new Date(s.schedule_start) > now) return false;
-    if (s.schedule_end && new Date(s.schedule_end) < now) return false;
-    return true;
-  });
+  // CRITICAL: useMemo to stabilize slides reference so useEffect timer works
+  const slides = useMemo(() => {
+    return (data?.playlist?.slides || []).filter(s => {
+      if (!s.is_active) return false;
+      const now = new Date();
+      if (s.schedule_start && new Date(s.schedule_start) > now) return false;
+      if (s.schedule_end && new Date(s.schedule_end) < now) return false;
+      return true;
+    });
+  }, [data?.playlist?.slides]);
 
-  const advanceSlide = useCallback(() => {
-    if (slides.length <= 1) return;
-    const ni = (ci + 1) % slides.length;
-    setPi(ci); setCi(ni); setTrans(true);
-    pdfDoneRef.current = false;
-    ttRef.current = setTimeout(() => { setTrans(false); setPi(-1); }, 1000);
-  }, [ci, slides.length]);
-
+  // Slide advancement
   useEffect(() => {
     if (slides.length <= 1) return;
     const cur = slides[ci];
-    // For PDF slides, wait for onAllPagesShown callback instead of timer
-    const isPdf = cur?.type === 'pdf' || (cur?.content?.type === 'pdf');
-    if (isPdf) return; // Don't set timer, PDF controls its own advancement
+    if (!cur) return;
 
-    const dur = (cur?.duration || 10) * 1000;
-    stRef.current = setTimeout(advanceSlide, dur);
+    // PDF slides manage their own advancement
+    const isPdf = cur.type === 'pdf' || cur.content?.type === 'pdf';
+    if (isPdf) return;
+
+    const dur = (cur.duration || 10) * 1000;
+    stRef.current = setTimeout(() => {
+      const ni = (ci + 1) % slides.length;
+      setPi(ci);
+      setCi(ni);
+      setTrans(true);
+      ttRef.current = setTimeout(() => { setTrans(false); setPi(-1); }, 1000);
+    }, dur);
+
     return () => { clearTimeout(stRef.current); clearTimeout(ttRef.current); };
-  }, [ci, slides.length, advanceSlide, slides]);
+  }, [ci, slides]);
 
   const handlePdfDone = useCallback(() => {
-    if (!pdfDoneRef.current) {
-      pdfDoneRef.current = true;
-      advanceSlide();
-    }
-  }, [advanceSlide]);
+    if (slides.length <= 1) return;
+    const ni = (ci + 1) % slides.length;
+    setPi(ci);
+    setCi(ni);
+    setTrans(true);
+    setTimeout(() => { setTrans(false); setPi(-1); }, 1000);
+  }, [ci, slides.length]);
 
-  const tClass = (slide, entering) => {
-    let t = slide?.transition || 'fade';
+  const getTransClass = (slide, entering) => {
+    const s = data?.settings || {};
+    let t = slide?.transition || s.default_transition || 'fade';
     if (t === 'random') t = Math.random() > 0.5 ? 'fade' : 'slide';
+    if (t === 'none') return '';
     return entering
       ? (t === 'slide' ? 'animate-slide-in-display' : 'animate-fade-in-display')
       : (t === 'slide' ? 'animate-slide-out-display' : 'animate-fade-out-display');
@@ -284,7 +291,6 @@ export default function Display() {
   const secStr = time.toLocaleTimeString('fr-FR', { second: '2-digit' }).split(':').pop();
   const dateStr = time.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Ticker: combine footer text items + RSS items based on toggles
   const footerTexts = (s.ticker_text_enabled !== false) ? (s.footer_items || []).filter(i => i.is_active).map(i => i.text) : [];
   const rssTexts = (s.ticker_rss_enabled !== false) ? rssItems : [];
   const allTickerTexts = [...footerTexts, ...rssTexts];
@@ -334,23 +340,23 @@ export default function Display() {
           </div>
           <div className="flex items-center gap-3">
             <div style={blockStyle}>
-              <span className="font-bold font-mono tabular-nums tracking-tight" style={{ fontSize: `${s.time_font_size || 32}px`, color: s.block_text_color || '#fff' }}>{timeStr}</span>
-              <span className="font-mono opacity-40" style={{ fontSize: `${Math.max((s.time_font_size || 32) * 0.4, 10)}px`, color: s.block_text_color || '#fff' }}>{secStr}</span>
+              <span className="font-bold font-mono tabular-nums tracking-tight" style={{ fontSize: `${s.time_font_size || 32}px` }}>{timeStr}</span>
+              <span className="font-mono opacity-40" style={{ fontSize: `${Math.max((s.time_font_size || 32) * 0.4, 10)}px` }}>{secStr}</span>
             </div>
             <div style={blockStyle} className="hidden md:flex">
-              <span className="font-medium capitalize" style={{ fontSize: `${s.date_font_size || 14}px`, color: s.block_text_color || '#fff', opacity: 0.85 }}>{dateStr}</span>
+              <span className="font-medium capitalize" style={{ fontSize: `${s.date_font_size || 14}px`, opacity: 0.85 }}>{dateStr}</span>
             </div>
             {weather && weather.temp != null && (
               <div style={blockStyle}>
                 <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt="" className="w-9 h-9 -ml-1" />
                 <div>
-                  <span className="font-bold" style={{ fontSize: `${s.weather_font_size || 18}px`, color: s.block_text_color || '#fff' }}>{weather.temp}&#176;</span>
-                  <p className="leading-none capitalize" style={{ fontSize: '10px', color: s.block_text_color || '#fff', opacity: 0.5 }}>{weather.city}</p>
+                  <span className="font-bold" style={{ fontSize: `${s.weather_font_size || 18}px` }}>{weather.temp}&#176;</span>
+                  <p className="leading-none capitalize" style={{ fontSize: '10px', opacity: 0.5 }}>{weather.city}</p>
                 </div>
                 {forecast.length > 0 && (
                   <div className="flex gap-2 ml-2 pl-2 border-l border-white/10">
                     {forecast.map((f, i) => (
-                      <div key={i} className="text-center" style={{ color: s.block_text_color || '#fff' }}>
+                      <div key={i} className="text-center">
                         <p className="text-[9px] opacity-50 capitalize">{DAYS_FR[f.day_name?.toLowerCase()] || f.day_name?.substring(0, 3)}</p>
                         <img src={`https://openweathermap.org/img/wn/${f.icon}.png`} alt="" className="w-6 h-6 mx-auto -my-0.5" />
                         <p className="text-[10px] font-bold">{Math.round(f.temp_max)}&#176;</p>
@@ -364,21 +370,20 @@ export default function Display() {
         </div>
       </div>
 
-      {/* MAIN ZONE */}
+      {/* MAIN */}
       <div className="absolute left-0 w-full z-10 transition-all duration-700 ease-out"
         style={{ top: immersion ? 0 : `${s.header_height || 72}px`, bottom: immersion ? 0 : `${s.footer_height || 44}px`, backgroundColor: s.content_bg || '#000' }} data-testid="display-main">
         {slides.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
             <p className="text-7xl md:text-9xl font-mono font-bold tracking-[0.4em] bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-6">{scr.pairing_code}</p>
             <p className="text-base text-white/30 font-light">En attente de contenu</p>
-            <p className="text-xs text-white/15 mt-2">{scr.name}</p>
           </div>
         ) : (
           <div className="relative w-full h-full overflow-hidden">
             {trans && pi >= 0 && pi < slides.length && (
-              <div className={`absolute inset-0 z-10 ${tClass(slides[ci], false)}`}><SlideContent slide={slides[pi]} /></div>
+              <div className={`absolute inset-0 z-10 ${getTransClass(slides[pi], false)}`}><SlideContent slide={slides[pi]} /></div>
             )}
-            <div className={`absolute inset-0 z-20 ${trans ? tClass(slides[ci], true) : ''}`}>
+            <div className={`absolute inset-0 z-20 ${trans ? getTransClass(slides[ci], true) : ''}`}>
               <SlideContent slide={slides[ci]} onDone={handlePdfDone} />
             </div>
           </div>

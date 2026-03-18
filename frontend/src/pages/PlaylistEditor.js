@@ -296,13 +296,20 @@ export default function PlaylistEditor() {
     API.get('/media').then(r => setMedia(r.data)).catch(() => {});
   }, [id, navigate]);
 
-  const savePlaylist = async () => {
+  const savePlaylist = async (updatedPlaylist) => {
+    const pl = updatedPlaylist || playlist;
+    if (!pl) return;
     setSaving(true);
     try {
-      await API.put(`/playlists/${id}`, { slides: playlist.slides, name: playlist.name });
-      toast.success('Playlist sauvegardee');
+      await API.put(`/playlists/${id}`, { slides: pl.slides, name: pl.name });
     } catch { toast.error('Erreur de sauvegarde'); }
     finally { setSaving(false); }
+  };
+
+  // Auto-save helper: updates local state and saves to API
+  const updateAndSave = (newPlaylist) => {
+    setPlaylist(newPlaylist);
+    savePlaylist(newPlaylist);
   };
 
   const handleDragEnd = (event) => {
@@ -310,7 +317,8 @@ export default function PlaylistEditor() {
     if (!over || active.id === over.id) return;
     const oldIdx = playlist.slides.findIndex(s => s.id === active.id);
     const newIdx = playlist.slides.findIndex(s => s.id === over.id);
-    setPlaylist({ ...playlist, slides: arrayMove(playlist.slides, oldIdx, newIdx).map((s, i) => ({ ...s, order: i })) });
+    const updated = { ...playlist, slides: arrayMove(playlist.slides, oldIdx, newIdx).map((s, i) => ({ ...s, order: i })) };
+    updateAndSave(updated);
   };
 
   const resetAddForm = () => {
@@ -340,27 +348,36 @@ export default function PlaylistEditor() {
       s.split_right_type = addRightType;
       s.split_right_content = { ...addRightContent };
     }
-    setPlaylist({ ...playlist, slides: [...playlist.slides, s] });
+    const updated = { ...playlist, slides: [...playlist.slides, s] };
+    updateAndSave(updated);
     setShowAddSlide(false);
     resetAddForm();
     toast.success('Diapo ajoutee');
   };
 
   const saveEditSlide = () => {
-    setPlaylist({
+    const updated = {
       ...playlist,
       slides: playlist.slides.map(s => s.id === editSlide.id ? editSlide : s)
-    });
+    };
+    updateAndSave(updated);
     setEditSlide(null);
-    toast.success('Diapo modifiee');
+    toast.success('Diapo enregistree');
   };
 
-  const removeSlide = (sid) => setPlaylist({ ...playlist, slides: playlist.slides.filter(s => s.id !== sid).map((s, i) => ({ ...s, order: i })) });
+  const removeSlide = (sid) => {
+    const updated = { ...playlist, slides: playlist.slides.filter(s => s.id !== sid).map((s, i) => ({ ...s, order: i })) };
+    updateAndSave(updated);
+  };
   const duplicateSlide = (sl) => {
-    setPlaylist({ ...playlist, slides: [...playlist.slides, { ...JSON.parse(JSON.stringify(sl)), id: crypto.randomUUID(), order: playlist.slides.length }] });
+    const updated = { ...playlist, slides: [...playlist.slides, { ...JSON.parse(JSON.stringify(sl)), id: crypto.randomUUID(), order: playlist.slides.length }] };
+    updateAndSave(updated);
     toast.success('Diapo dupliquee');
   };
-  const toggleSlide = (sid) => setPlaylist({ ...playlist, slides: playlist.slides.map(s => s.id === sid ? { ...s, is_active: !s.is_active } : s) });
+  const toggleSlide = (sid) => {
+    const updated = { ...playlist, slides: playlist.slides.map(s => s.id === sid ? { ...s, is_active: !s.is_active } : s) };
+    updateAndSave(updated);
+  };
 
   if (!playlist) return <div className="flex items-center justify-center h-64 text-slate-400">Chargement...</div>;
 
@@ -381,7 +398,7 @@ export default function PlaylistEditor() {
           <Button onClick={() => { resetAddForm(); setShowAddSlide(true); }} data-testid="add-slide-btn">
             <Plus className="h-4 w-4 mr-2" /> Ajouter
           </Button>
-          <Button variant="outline" onClick={savePlaylist} disabled={saving} data-testid="save-playlist-btn">
+          <Button variant="outline" onClick={() => { savePlaylist(); toast.success('Playlist sauvegardee'); }} disabled={saving} data-testid="save-playlist-btn">
             <Save className="h-4 w-4 mr-2" /> {saving ? '...' : 'Sauvegarder'}
           </Button>
         </div>
