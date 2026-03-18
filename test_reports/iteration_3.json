@@ -1,0 +1,99 @@
+{
+  "summary": "Comprehensive testing of 5 new Intensiti features completed. All backend APIs (33/33) and frontend UI features working correctly. New features: 50/50 split layout with Gauche/Droite content pickers, ticker speed control slider, multiple RSS feeds management, RSS batch endpoint, advanced playlist scheduling with day-of-week and month selectors.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "--- EXISTING FEATURES (18 tests) ---",
+    "Superadmin login (admin@intensiti.com / admin123) - 200 OK",
+    "Client login (demo@test.com / demo123) - 200 OK",
+    "Invalid credentials rejection - 401",
+    "Client dashboard stats - 200 OK",
+    "Screen CRUD operations - all pass",
+    "Force refresh endpoint - 200 OK",
+    "Playlist CRUD operations - all pass",
+    "Playlist duplicate endpoint - 200 OK",
+    "Display page /api/display/386621 - 200 OK",
+    "Weather current and forecast - 200 OK",
+    "RSS feed endpoint - 200 OK",
+    "Settings get/update - 200 OK",
+    "Ephemeris endpoint - 200 OK",
+    
+    "--- NEW FEATURE 1: TICKER SPEED (2 tests) ---",
+    "GET /api/settings returns ticker_speed field",
+    "PUT /api/settings with ticker_speed=60 persists correctly",
+    
+    "--- NEW FEATURE 2: MULTIPLE RSS FEEDS (3 tests) ---",
+    "GET /api/settings returns rss_items array",
+    "PUT /api/settings with multiple rss_items array saves correctly",
+    "RSS items is_active toggle (true/false) works",
+    
+    "--- NEW FEATURE 3: RSS BATCH ENDPOINT (3 tests) ---",
+    "POST /api/rss/batch with single URL returns items",
+    "POST /api/rss/batch with multiple URLs returns combined items",
+    "POST /api/rss/batch with empty urls returns empty items",
+    
+    "--- NEW FEATURE 4: PLAYLIST SCHEDULING (3 tests) ---",
+    "Playlist schedule_days and schedule_months fields save correctly",
+    "Update existing playlist schedule works",
+    "Clear schedule (empty arrays) works",
+    
+    "--- NEW FEATURE 5: 50/50 SPLIT LAYOUT & RSS SLIDE (4 tests) ---",
+    "Split slide with split_left_type/content and split_right_type/content saves",
+    "Multiple content type combinations (youtube|qrcode, text|rss, countdown|media) work",
+    "RSS slide type with rss_url content saves correctly",
+    "Display endpoint returns settings with ticker_speed and rss_items",
+    
+    "--- FRONTEND UI VERIFIED ---",
+    "Settings page: Ticker speed slider visible under 'Diffusion' section (30s default)",
+    "Settings page: Multiple RSS feeds inputs visible (name + URL fields with data-testid)",
+    "Playlists page: Schedule button (calendar icon) visible on playlist cards",
+    "Playlists page: Schedule dialog shows 7 day buttons (Lun-Dim) and 12 month buttons (Jan-Dec)",
+    "Playlist Editor: Add slide dialog has Disposition dropdown with 50/50 option",
+    "Playlist Editor: 50/50 layout shows Gauche and Droite content pickers",
+    "Playlist Editor: 6 content types available (Media, YouTube, QR Code, Compte a rebours, Texte, Flux RSS)",
+    "Display page: Header shows logo, time, date, weather with 3-day forecast",
+    "Display page: Footer ticker scrolls RSS headlines (animationDuration controlled by ticker_speed)",
+    "Display page: Slides transition correctly (QR Code, Text slides verified)"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_api.py",
+    "/app/backend/tests/test_new_features.py",
+    "/app/test_reports/pytest/pytest_results_new.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_new_features.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (33/33 tests passed)",
+    "frontend": "100% (all new features working)"
+  },
+
+  "test_credentials": {
+    "superadmin": "admin@intensiti.com / admin123",
+    "client": "demo@test.com / demo123"
+  },
+
+  "seed_data_creation": "None - test playlists cleaned up automatically",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "All 5 new features verified working: (1) 50/50 split layout stores split_left_type, split_left_content, split_right_type, split_right_content in slide object - UI shows Gauche/Droite pickers when layout=split selected. (2) Ticker speed slider in Settings Diffusion section, value persists via PUT /api/settings with ticker_speed. Display page applies animationDuration from ticker_speed. (3) Multiple RSS feeds via rss_items array in settings with id/url/name/is_active/order structure. (4) RSS batch endpoint POST /api/rss/batch accepts {urls:[]} and returns combined items. (5) Playlist scheduling with schedule_days (0-6 for Mon-Sun) and schedule_months (1-12) arrays, UI has 7 day buttons and 12 month buttons. Backend checks scheduling logic in /api/display/{code}. Display code for testing: 386621."
+}

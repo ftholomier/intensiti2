@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
-import { Upload, Save, Palette, Plus, Trash2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
+import { Upload, Save, Palette, Plus, Trash2, ArrowUp, ArrowDown, Rss } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ColorField = ({ label, value, onChange }) => (
@@ -35,6 +35,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [newFooterText, setNewFooterText] = useState('');
+  const [newRssUrl, setNewRssUrl] = useState('');
+  const [newRssName, setNewRssName] = useState('');
 
   useEffect(() => { API.get('/settings').then(r => setS(r.data)).catch(() => {}); }, []);
 
@@ -73,6 +75,18 @@ export default function SettingsPage() {
     [items[idx], items[ni]] = [items[ni], items[idx]];
     up('footer_items', items.map((i, x) => ({ ...i, order: x })));
   };
+
+  // RSS items helpers
+  const rssItems = s?.rss_items || [];
+  const addRssItem = () => {
+    if (!newRssUrl.trim()) return;
+    const items = [...rssItems, { id: crypto.randomUUID(), url: newRssUrl.trim(), name: newRssName.trim() || newRssUrl.trim(), is_active: true, order: rssItems.length }];
+    up('rss_items', items);
+    setNewRssUrl('');
+    setNewRssName('');
+  };
+  const removeRssItem = (id) => up('rss_items', rssItems.filter(i => i.id !== id).map((i, idx) => ({ ...i, order: idx })));
+  const toggleRssItem = (id) => up('rss_items', rssItems.map(i => i.id === id ? { ...i, is_active: !i.is_active } : i));
 
   if (!s) return <div className="flex items-center justify-center h-64 text-slate-400">Chargement...</div>;
 
@@ -142,12 +156,23 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Default duration */}
+        {/* Diffusion settings */}
         <Card>
           <CardHeader><CardTitle className="text-base">Diffusion</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <NumField label="Duree par defaut des diapos" value={s.default_slide_duration} onChange={v => up('default_slide_duration', v)} unit="sec" min={1} max={300} />
+              <div className="space-y-1.5">
+                <Label className="text-xs">Vitesse du bandeau defilant</Label>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-[10px] text-slate-400">Rapide</span>
+                  <input type="range" min="10" max="120" value={s.ticker_speed || 30}
+                    onChange={e => up('ticker_speed', parseInt(e.target.value))}
+                    className="flex-1 h-2 accent-primary cursor-pointer" data-testid="ticker-speed-slider" />
+                  <span className="text-[10px] text-slate-400">Lent</span>
+                </div>
+                <p className="text-[10px] text-slate-400 text-center">{s.ticker_speed || 30}s par cycle</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -156,14 +181,11 @@ export default function SettingsPage() {
         <Card>
           <CardHeader><CardTitle className="text-base">Bandeau defilant (textes)</CardTitle></CardHeader>
           <CardContent className="space-y-4">
-            {/* Add new */}
             <div className="flex gap-2">
               <Input value={newFooterText} onChange={e => setNewFooterText(e.target.value)} placeholder="Ajouter un texte defilant..."
                 onKeyDown={e => e.key === 'Enter' && addFooterItem()} data-testid="footer-item-input" className="flex-1" />
               <Button size="sm" onClick={addFooterItem} data-testid="add-footer-item-btn"><Plus className="h-4 w-4" /></Button>
             </div>
-
-            {/* List */}
             {footerItems.length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-4">Aucun texte. Ajoutez-en un ci-dessus.</p>
             ) : (
@@ -187,16 +209,51 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* RSS */}
+        {/* RSS feeds */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Flux RSS</CardTitle></CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Label className="text-xs">URL du flux RSS (s'ajoute au bandeau defilant)</Label>
-              <Input value={s.footer_rss_url || ''} onChange={e => up('footer_rss_url', e.target.value)}
-                placeholder="https://example.com/rss.xml" data-testid="footer-rss-input" />
-              <p className="text-[11px] text-slate-400">Les titres du flux RSS seront ajoutes au bandeau defilant automatiquement.</p>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Rss className="h-4 w-4 text-orange-500" /> Flux RSS (bandeau defilant)</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-[11px] text-slate-400">Les titres de tous les flux RSS actifs seront ajoutes automatiquement au bandeau defilant.</p>
+            <div className="flex gap-2">
+              <Input value={newRssName} onChange={e => setNewRssName(e.target.value)} placeholder="Nom (ex: Le Monde)"
+                className="w-36" data-testid="rss-name-input" />
+              <Input value={newRssUrl} onChange={e => setNewRssUrl(e.target.value)} placeholder="https://example.com/rss.xml"
+                onKeyDown={e => e.key === 'Enter' && addRssItem()} data-testid="rss-url-input" className="flex-1" />
+              <Button size="sm" onClick={addRssItem} data-testid="add-rss-item-btn"><Plus className="h-4 w-4" /></Button>
             </div>
+            {rssItems.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">Aucun flux RSS. Ajoutez-en un ci-dessus.</p>
+            ) : (
+              <div className="space-y-1.5">
+                {rssItems.map(item => (
+                  <div key={item.id} className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${item.is_active ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-100 opacity-50'}`}>
+                    <Rss className="h-3.5 w-3.5 text-orange-400 shrink-0" />
+                    <span className="text-xs font-medium w-24 truncate shrink-0">{item.name}</span>
+                    <span className="text-xs text-slate-400 truncate flex-1">{item.url}</span>
+                    <Switch checked={item.is_active} onCheckedChange={() => toggleRssItem(item.id)} />
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-red-300 hover:text-red-600" onClick={() => removeRssItem(item.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Legacy single RSS URL - keep for backward compat */}
+            {s.footer_rss_url && (
+              <div className="pt-3 border-t border-dashed">
+                <Label className="text-xs text-slate-400">URL RSS heritee (migrez vers la liste ci-dessus)</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input value={s.footer_rss_url || ''} onChange={e => up('footer_rss_url', e.target.value)} className="flex-1 text-xs" />
+                  <Button variant="outline" size="sm" onClick={() => {
+                    if (s.footer_rss_url) {
+                      const items = [...rssItems, { id: crypto.randomUUID(), url: s.footer_rss_url, name: 'RSS migre', is_active: true, order: rssItems.length }];
+                      setS({ ...s, rss_items: items, footer_rss_url: '' });
+                    }
+                  }}>Migrer</Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

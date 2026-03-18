@@ -36,18 +36,72 @@ function CountdownWidget({ targetDate, label }) {
   );
 }
 
-/* Slide Content */
+/* RSS Slide Content */
+function RssSlideContent({ rssUrl }) {
+  const [items, setItems] = useState([]);
+  const [ci, setCi] = useState(0);
+
+  useEffect(() => {
+    if (!rssUrl) return;
+    fetch(`${BACKEND_URL}/api/rss?url=${encodeURIComponent(rssUrl)}`)
+      .then(r => r.json())
+      .then(d => { if (d.items) setItems(d.items); })
+      .catch(() => {});
+  }, [rssUrl]);
+
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const i = setInterval(() => setCi(p => (p + 1) % items.length), 6000);
+    return () => clearInterval(i);
+  }, [items.length]);
+
+  if (items.length === 0) return <div className="flex items-center justify-center h-full text-white/30">Chargement du flux RSS...</div>;
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full px-12 text-white">
+      <div className="text-center max-w-4xl">
+        <div className="inline-block px-4 py-1.5 bg-orange-500/20 text-orange-300 rounded-full text-xs uppercase tracking-widest font-medium mb-8">Flux RSS</div>
+        <p className="text-3xl md:text-5xl font-bold leading-tight animate-fade-in-display" key={ci}>{items[ci]}</p>
+        <div className="flex justify-center gap-1.5 mt-8">
+          {items.slice(0, 10).map((_, i) => (
+            <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i === ci % 10 ? 'w-6 bg-orange-400' : 'w-1.5 bg-white/15'}`} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Single Content Renderer (used for both full and split) */
+function SingleContent({ type, content, fitMode }) {
+  const c = content || {};
+  const fit = fitMode === 'fill' ? 'cover' : 'contain';
+  if (type === 'media' && c.type === 'image') return <img src={getMediaUrl(c.url)} alt="" className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
+  if (type === 'media' && c.type === 'video') return <video src={getMediaUrl(c.url)} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
+  if (type === 'youtube') { const ytId = extractYouTubeId(c.url); return ytId ? <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0`} className="absolute inset-0 w-full h-full" frameBorder="0" allow="autoplay" allowFullScreen title="YT" /> : null; }
+  if (type === 'qrcode') return <div className="flex flex-col items-center justify-center h-full"><div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl shadow-white/10"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(c.url || 'https://example.com')}`} alt="QR" className="w-48 h-48 md:w-64 md:h-64" /></div><p className="text-white/40 text-xs mt-4 max-w-xs truncate">{c.url}</p></div>;
+  if (type === 'countdown') return <CountdownWidget targetDate={c.target_date} label={c.label} />;
+  if (type === 'text') return <div className="flex items-center justify-center h-full px-8 md:px-20"><div className="display-text-content" dangerouslySetInnerHTML={{ __html: c.html || c.text || '' }} /></div>;
+  if (type === 'rss') return <RssSlideContent rssUrl={c.rss_url} />;
+  return null;
+}
+
+/* Slide Content - delegates to SingleContent or split */
 function SlideContent({ slide }) {
   if (!slide) return null;
-  const c = slide.content || {};
-  const fit = slide.fit_mode === 'fill' ? 'cover' : 'contain';
-  if (slide.type === 'media' && c.type === 'image') return <img src={getMediaUrl(c.url)} alt="" className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
-  if (slide.type === 'media' && c.type === 'video') return <video src={getMediaUrl(c.url)} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
-  if (slide.type === 'youtube') { const ytId = extractYouTubeId(c.url); return ytId ? <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0`} className="absolute inset-0 w-full h-full" frameBorder="0" allow="autoplay" allowFullScreen title="YT" /> : null; }
-  if (slide.type === 'qrcode') return <div className="flex flex-col items-center justify-center h-full"><div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl shadow-white/10"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(c.url || 'https://example.com')}`} alt="QR" className="w-48 h-48 md:w-64 md:h-64" /></div><p className="text-white/40 text-xs mt-4 max-w-xs truncate">{c.url}</p></div>;
-  if (slide.type === 'countdown') return <CountdownWidget targetDate={c.target_date} label={c.label} />;
-  if (slide.type === 'text') return <div className="flex items-center justify-center h-full px-8 md:px-20"><div className="display-text-content" dangerouslySetInnerHTML={{ __html: c.html || c.text || '' }} /></div>;
-  return null;
+  if (slide.layout === 'split') {
+    return (
+      <div className="flex w-full h-full">
+        <div className="w-1/2 h-full relative overflow-hidden border-r border-white/5">
+          <SingleContent type={slide.split_left_type || slide.type} content={slide.split_left_content || slide.content} fitMode={slide.fit_mode} />
+        </div>
+        <div className="w-1/2 h-full relative overflow-hidden">
+          <SingleContent type={slide.split_right_type || slide.type} content={slide.split_right_content || {}} fitMode={slide.fit_mode} />
+        </div>
+      </div>
+    );
+  }
+  return <SingleContent type={slide.type} content={slide.content} fitMode={slide.fit_mode} />;
 }
 
 const DAYS_FR = { monday: 'Lun', tuesday: 'Mar', wednesday: 'Mer', thursday: 'Jeu', friday: 'Ven', saturday: 'Sam', sunday: 'Dim' };
@@ -90,14 +144,31 @@ export default function Display() {
   }, [data?.screen?.weather_city]);
 
   const fetchRss = useCallback(async () => {
-    const url = data?.settings?.footer_rss_url;
-    if (!url) return;
+    const s = data?.settings || {};
+    // Collect all RSS URLs: legacy single + rss_items array
+    const urls = [];
+    if (s.footer_rss_url) urls.push(s.footer_rss_url);
+    const rssItemsList = (s.rss_items || []).filter(i => i.is_active);
+    rssItemsList.forEach(i => { if (i.url) urls.push(i.url); });
+
+    if (urls.length === 0) { setRssItems([]); return; }
+
     try {
-      const r = await fetch(`${BACKEND_URL}/api/rss?url=${encodeURIComponent(url)}`);
-      const d = await r.json();
-      if (d.items) setRssItems(d.items);
+      if (urls.length === 1) {
+        const r = await fetch(`${BACKEND_URL}/api/rss?url=${encodeURIComponent(urls[0])}`);
+        const d = await r.json();
+        if (d.items) setRssItems(d.items);
+      } else {
+        const r = await fetch(`${BACKEND_URL}/api/rss/batch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ urls })
+        });
+        const d = await r.json();
+        if (d.items) setRssItems(d.items);
+      }
     } catch {}
-  }, [data?.settings?.footer_rss_url]);
+  }, [data?.settings]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { const i = setInterval(fetchData, 30000); return () => clearInterval(i); }, [fetchData]);
@@ -145,11 +216,6 @@ export default function Display() {
   const cur = slides[ci];
   const immersion = scr.settings?.immersion || cur?.layout === 'immersion';
 
-  // 50/50 split
-  const isSplit = cur?.layout === 'split';
-  const leftContent = isSplit ? cur : null;
-  const rightContent = isSplit ? { ...cur, content: cur.content_right, type: cur.type_right || cur.type } : null;
-
   const timeStr = time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   const secStr = time.toLocaleTimeString('fr-FR', { second: '2-digit' }).split(':').pop();
   const dateStr = time.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -158,6 +224,7 @@ export default function Display() {
   const footerItems = (s.footer_items || []).filter(i => i.is_active).map(i => i.text);
   const allTickerTexts = [...footerItems, ...rssItems];
   const tickerText = allTickerTexts.length > 0 ? allTickerTexts.join('   \u2022   ') : (s.footer_text || 'Bienvenue');
+  const tickerSpeed = s.ticker_speed || 30;
 
   // Block style helper
   const blockStyle = {
@@ -199,22 +266,17 @@ export default function Display() {
       <div className="absolute top-0 left-0 w-full z-20 transition-all duration-700 ease-out"
         style={{ height: immersion ? 0 : `${s.header_height || 72}px`, opacity: immersion ? 0 : 1, overflow: 'hidden' }} data-testid="display-header">
         <div className="h-full w-full flex items-center justify-between px-5" style={{ backgroundColor: s.header_bg || '#0F172A' }}>
-          {/* Logo */}
           <div style={blockStyle}>
             {s.logo_url ? <img src={getMediaUrl(s.logo_url)} alt="" style={{ height: `${Math.max((s.header_height || 72) - 36, 20)}px`, objectFit: 'contain' }} /> : <span className="font-bold tracking-tight" style={{ color: s.block_text_color || '#fff' }}>Intensiti</span>}
           </div>
-
           <div className="flex items-center gap-3">
-            {/* Time */}
             <div style={blockStyle}>
               <span className="font-bold font-mono tabular-nums tracking-tight" style={{ fontSize: `${s.time_font_size || 32}px`, color: s.block_text_color || '#fff' }}>{timeStr}</span>
               <span className="font-mono opacity-40" style={{ fontSize: `${Math.max((s.time_font_size || 32) * 0.4, 10)}px`, color: s.block_text_color || '#fff' }}>{secStr}</span>
             </div>
-            {/* Date */}
             <div style={blockStyle} className="hidden md:flex">
               <span className="font-medium capitalize" style={{ fontSize: `${s.date_font_size || 14}px`, color: s.block_text_color || '#fff', opacity: 0.85 }}>{dateStr}</span>
             </div>
-            {/* Weather current + forecast */}
             {weather && weather.temp != null && (
               <div style={blockStyle}>
                 <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt="" className="w-9 h-9 -ml-1" />
@@ -222,7 +284,6 @@ export default function Display() {
                   <span className="font-bold" style={{ fontSize: `${s.weather_font_size || 18}px`, color: s.block_text_color || '#fff' }}>{weather.temp}&#176;</span>
                   <p className="leading-none capitalize" style={{ fontSize: '10px', color: s.block_text_color || '#fff', opacity: 0.5 }}>{weather.city}</p>
                 </div>
-                {/* 3-day mini forecast */}
                 {forecast.length > 0 && (
                   <div className="flex gap-2 ml-2 pl-2 border-l border-white/10">
                     {forecast.map((f, i) => (
@@ -249,11 +310,6 @@ export default function Display() {
             <p className="text-base text-white/30 font-light">En attente de contenu</p>
             <p className="text-xs text-white/15 mt-2">{scr.name}</p>
           </div>
-        ) : isSplit ? (
-          <div className="flex w-full h-full">
-            <div className="w-1/2 h-full relative overflow-hidden border-r border-white/5"><SlideContent slide={leftContent} /></div>
-            <div className="w-1/2 h-full relative overflow-hidden"><SlideContent slide={rightContent} /></div>
-          </div>
         ) : (
           <div className="relative w-full h-full overflow-hidden">
             {trans && pi >= 0 && pi < slides.length && (
@@ -269,7 +325,11 @@ export default function Display() {
         style={{ height: immersion ? 0 : `${s.footer_height || 44}px`, opacity: immersion ? 0 : 1, overflow: 'hidden' }} data-testid="display-footer">
         <div className="h-full w-full flex items-center" style={{ backgroundColor: s.footer_bg || '#0F172A' }}>
           <div className="display-ticker" style={{ '--ticker-bg': s.footer_bg || '#0F172A' }}>
-            <span className="display-ticker-text" style={{ color: s.text_color || '#fff', fontSize: `${s.footer_font_size || 15}px` }}>
+            <span className="display-ticker-text" style={{
+              color: s.text_color || '#fff',
+              fontSize: `${s.footer_font_size || 15}px`,
+              animationDuration: `${tickerSpeed}s`
+            }}>
               {tickerText}&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;{tickerText}&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;
             </span>
           </div>

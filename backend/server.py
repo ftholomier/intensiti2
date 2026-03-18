@@ -80,6 +80,8 @@ class PlaylistUpdate(BaseModel):
     is_active: Optional[bool] = None
     schedule_start: Optional[str] = None
     schedule_end: Optional[str] = None
+    schedule_days: Optional[List[int]] = None
+    schedule_months: Optional[List[int]] = None
 
 class FlashAlertCreate(BaseModel):
     message: str
@@ -106,6 +108,8 @@ class SettingsUpdate(BaseModel):
     default_slide_duration: Optional[int] = None
     footer_items: Optional[List[Dict[str, Any]]] = None
     footer_rss_url: Optional[str] = None
+    rss_items: Optional[List[Dict[str, Any]]] = None
+    ticker_speed: Optional[int] = None
 
 class YouTubeMediaCreate(BaseModel):
     name: str
@@ -233,7 +237,9 @@ async def create_client(data: ClientCreate, request: Request):
         "block_padding_h": 14,
         "default_slide_duration": 10,
         "footer_items": [{"id": str(uuid.uuid4()), "text": "Bienvenue", "is_active": True, "order": 0}],
-        "footer_rss_url": ""
+        "footer_rss_url": "",
+        "rss_items": [],
+        "ticker_speed": 30
     }
     await db.client_settings.insert_one(settings)
     return {"id": client_id, "email": data.email, "company_name": data.company_name}
@@ -525,6 +531,42 @@ async def get_display_data(code: str):
     playlist = None
     if screen.get("playlist_id"):
         playlist = await db.playlists.find_one({"id": screen["playlist_id"]}, {"_id": 0})
+    # Check scheduled playlists - find a matching one for today
+    now = datetime.now(timezone.utc)
+    current_day = now.weekday()  # 0=Monday, 6=Sunday
+    current_month = now.month  # 1-12
+    scheduled_playlist = None
+    client_playlists = await db.playlists.find({"client_id": screen["client_id"]}, {"_id": 0}).to_list(1000)
+    for pl in client_playlists:
+        pl_days = pl.get("schedule_days")
+        pl_months = pl.get("schedule_months")
+        pl_start = pl.get("schedule_start")
+        pl_end = pl.get("schedule_end")
+        if not pl_days and not pl_months and not pl_start:
+            continue
+        # Check date range
+        if pl_start:
+            try:
+                if datetime.fromisoformat(pl_start) > now:
+                    continue
+            except Exception:
+                pass
+        if pl_end:
+            try:
+                if datetime.fromisoformat(pl_end) < now:
+                    continue
+            except Exception:
+                pass
+        # Check day of week (0=Mon..6=Sun)
+        day_match = not pl_days or current_day in pl_days
+        # Check month
+        month_match = not pl_months or current_month in pl_months
+        if day_match and month_match and pl.get("is_active", True):
+            scheduled_playlist = pl
+            break
+    # Scheduled playlist takes priority
+    if scheduled_playlist:
+        playlist = scheduled_playlist
     flash_alert = await db.flash_alerts.find_one(
         {"client_id": screen["client_id"], "is_active": True}, {"_id": 0}
     )
@@ -620,6 +662,24 @@ async def fetch_rss(url: str = ""):
             logger.error(f"RSS fetch error: {e}")
             return {"items": [], "error": str(e)}
 
+@api_router.post("/rss/batch")
+async def fetch_rss_batch(data: Dict[str, Any]):
+    urls = data.get("urls", [])
+    if not urls:
+        return {"items": []}
+    import feedparser
+    all_items = []
+    async with httpx.AsyncClient() as http_client:
+        for url in urls[:10]:
+            try:
+                response = await http_client.get(url, timeout=15, follow_redirects=True)
+                feed = feedparser.parse(response.text)
+                items = [entry.get("title", "") for entry in feed.entries[:10] if entry.get("title")]
+                all_items.extend(items)
+            except Exception as e:
+                logger.error(f"RSS batch fetch error for {url}: {e}")
+    return {"items": all_items}
+
 # --- Flash Alert ---
 @api_router.post("/flash-alert")
 async def create_flash_alert(data: FlashAlertCreate, request: Request):
@@ -661,7 +721,8 @@ async def get_settings(request: Request):
         settings = {
             "client_id": client_id, "logo_url": "", "primary_color": "#4F46E5",
             "secondary_color": "#F1F5F9", "header_bg": "#1E293B", "footer_bg": "#1E293B",
-            "text_color": "#FFFFFF", "footer_text": "Bienvenue", "footer_rss_url": ""
+            "text_color": "#FFFFFF", "footer_text": "Bienvenue", "footer_rss_url": "",
+            "rss_items": [], "ticker_speed": 30
         }
         await db.client_settings.insert_one(settings)
         settings.pop("_id", None)
