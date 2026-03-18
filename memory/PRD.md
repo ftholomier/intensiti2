@@ -18,6 +18,7 @@ Media, YouTube, QR Code, Countdown, Text (WYSIWYG), RSS, PDF (page-by-page)
 - Weather (current + 3-day forecast), RSS proxy (single + batch)
 - Display endpoint with scheduling logic + force_refresh
 - Settings: colors, sizes, logo, default_transition, custom_css, wysiwyg_size_* (6 levels), footer items, rss_items, ticker_speed/text/rss toggles
+- Settings: selected_theme_id, selected_animation_id (new)
 - Flash alerts, Ephemeris
 
 ### Frontend
@@ -32,19 +33,38 @@ Media, YouTube, QR Code, Countdown, Text (WYSIWYG), RSS, PDF (page-by-page)
 - **Rename playlist**: pencil icon on list page + inline rename in editor (onBlur auto-save)
 - **Bandeau defilant** (dedicated page): speed, text toggle, RSS toggle
 - **Settings**: colors, sizes, logo, transition (4 types), WYSIWYG font sizes (6 levels px), custom CSS textarea, preview
-- **Display**: slides advance (useMemo), transitions, force refresh, custom CSS injection, font size CSS mapping, split-immersion
+- **Themes Page** (NEW - March 18, 2026):
+  - 12 subtle professional background animations (lines, gradient fade, particles, waves, grid, fog, pulse, diagonals, circles, gleam, bokeh, none)
+  - 48 themes organized in 8 categories (Clair, Bleu, Vert, Chaud, Violet & Rose, Sombre, Terre, Special)
+  - Category filter tabs, combined theme+animation saving
+  - Animation overlay in Display page via dedicated div
+- **Display**: slides advance (useMemo), transitions, force refresh, custom CSS injection, font size CSS mapping, split-immersion, animation overlay
 - Toast: bottom-right
 
-## Test Results (March 18, 2026)
-- iteration_6.json: 100% (12/12 backend, 100% frontend)
+## Test Results
+- iteration_7.json: 100% (basic theme integration)
+- iteration_8.json: 100% (48 themes + 12 animations - backend 9/9, frontend 11/11)
 
 ## Credentials
 - Superadmin: admin@intensiti.com / admin123
 - Client: demo@test.com / demo123
 
+## Key Files
+- `frontend/src/lib/themes.js` - 48 themes definitions
+- `frontend/src/lib/animations.js` - 12 animations definitions
+- `frontend/src/pages/ThemesPage.js` - Themes + animations page
+- `frontend/src/pages/Display.js` - Display with animation overlay
+
 ## Prioritized Backlog
 ### P1
-- Statistics/reporting, Flash Info, Heartbeat monitoring + alerts, Ephemeris frontend
+- Live preview mode in playlist editor
+- Statistics/reporting module
+- Flash Info alert system
 
 ### P2
+- Multi-screen dashboard, Heartbeat monitoring + alerts
+- Ephemeris frontend integration
+- Playlist templates
+
+### P3
 - Eco mode, Remote screenshot, Offline cache, 2FA, Screen groups, Export/import, Granular roles
