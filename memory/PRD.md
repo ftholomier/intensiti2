@@ -29,31 +29,44 @@ SaaS solution for professional digital signage - browser-based full-screen displ
 - Client settings (colors, logo, footer text)
 - Drag & drop slide reordering
 - Scheduling with calendar + time pickers
+- RSS feed integration in footer ticker
+- Force refresh button on screens
+- Playlist duplication
+- 3-day weather forecast
 
-## What's Been Implemented (March 17, 2026)
-### Backend
+## What's Been Implemented
+
+### Backend (All working)
 - JWT authentication (login, token verification)
 - User management (super admin creates/suspends/deletes clients)
 - Screen CRUD + pairing + heartbeat
 - Media upload/management (local storage)
-- Playlist CRUD with slides
-- Weather API (OpenWeatherMap)
+- Playlist CRUD with slides + duplication
+- Weather API (current + 3-day forecast)
+- RSS feed proxy endpoint
 - Display data endpoint
 - Flash alerts
-- Client settings (colors, logo, footer text)
+- Client settings (colors, logo, footer items, RSS URL)
 - Dashboard stats
-- Ephemeris (saint du jour - full French calendar)
+- Ephemeris (saint du jour)
+- Force refresh endpoint for screens
 
-### Frontend
+### Frontend (All working)
 - Login page
 - Role-based dashboard (Super Admin / Client)
 - Client management (Super Admin)
-- Screen management with "Voir l'ecran" preview button
+- Screen management with force refresh button, "Voir l'ecran" preview
 - Media library with drag/drop upload, YouTube URLs
-- Playlist editor with DnD (@dnd-kit), edit dialog, WYSIWYG
+- Playlist editor with DnD (@dnd-kit), edit dialog, WYSIWYG (contentEditable)
 - Full slide editing: content, duration, transition, layout, fit mode, scheduling
-- Display view with glassmorphism header blocks, thin CNews-style ticker
-- Settings page with color pickers, logo upload, footer text
+- Display view with glassmorphism header blocks, 3-day forecast, RSS ticker
+- Settings page with 7 color pickers, size controls, footer items management, RSS URL, logo upload, preview
+- Playlist duplication button
+
+## Test Results (March 18, 2026)
+- Backend: 100% (18/18 tests passed)
+- Frontend: 100% (all features working)
+- Test report: /app/test_reports/iteration_2.json
 
 ## Prioritized Backlog
 ### P0 (Critical - Next)
@@ -63,8 +76,9 @@ SaaS solution for professional digital signage - browser-based full-screen displ
 ### P1 (Important)
 - Heartbeat monitoring improvements + email alerts after 30min offline
 - Remote screenshot capture
-- RSS feed support in footer
 - Service Worker offline cache
+- Detailed statistics and reporting module
+- Flash Info alert system improvements
 
 ### P2 (Nice to Have)
 - 2FA authentication (OTP or email)
@@ -72,10 +86,8 @@ SaaS solution for professional digital signage - browser-based full-screen displ
 - Screen groups batch management
 - Advanced ephemeris (citations)
 - Export/import playlists
+- More granular user roles and permissions
 
-## Next Tasks
-1. Implement PDF Smart rendering in slides
-2. Add Eco mode (screen schedule on/off)
-3. Improve heartbeat monitoring + offline alerts
-4. Add RSS feed parsing for footer text
-5. Service Worker for offline cache
+## Credentials
+- Superadmin: admin@intensiti.com / admin123
+- Client: demo@test.com / demo123
