@@ -392,6 +392,8 @@ export default function Display() {
           </div>
         ) : (
           <div className="relative w-full h-full overflow-hidden">
+            {/* Animation overlay - driven by custom CSS */}
+            <div data-testid="display-animation-overlay" />
             {trans && pi >= 0 && pi < slides.length && (
               <div className={`absolute inset-0 z-10 ${getTransClass(slides[pi], false)}`}><SlideContent slide={slides[pi]} /></div>
             )}

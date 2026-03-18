@@ -114,6 +114,8 @@ class SettingsUpdate(BaseModel):
     ticker_rss_enabled: Optional[bool] = None
     default_transition: Optional[str] = None
     custom_css: Optional[str] = None
+    selected_theme_id: Optional[str] = None
+    selected_animation_id: Optional[str] = None
     wysiwyg_size_small: Optional[int] = None
     wysiwyg_size_normal: Optional[int] = None
     wysiwyg_size_medium: Optional[int] = None
