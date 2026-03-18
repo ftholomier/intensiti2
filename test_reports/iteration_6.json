@@ -1,0 +1,93 @@
+{
+  "summary": "Iteration 6 testing complete - All 5 new features verified working: (1) Split-Immersion '50/50 Full Screen' layout available in Add Slide dialog, (2) WYSIWYG editor has min-h-[250px] (content area = 250px), (3) Custom CSS textarea in Settings saves and injects into Display page, (4) WYSIWYG font sizes (6 levels in px) configurable in Settings, (5) Rename playlist from list page with pencil icon + auto-save name on blur in editor. All 12 backend tests passed (100%), all frontend UI features verified.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "--- SPLIT-IMMERSION LAYOUT (Feature 1) ---",
+    "Add Slide dialog Disposition dropdown has 4 options: 100%, 50/50, Full Screen, 50/50 Full Screen",
+    "50/50 Full Screen layout selectable in editor",
+    "Add/edit slide dialogs use max-w-[95vw] (measured 1824px on 1920px viewport)",
+    "Backend: split-immersion slide can be added via PUT /api/playlists/{id}",
+    
+    "--- WYSIWYG HEIGHT (Feature 2) ---",
+    "RichTextEditor content area has min-h-[250px] (measured: 250px exact)",
+    "WYSIWYG editor toolbar visible with Bold, Italic, Underline, Alignment, Font Size dropdown",
+    "Font size dropdown shows: Petit, Normal, Moyen, Grand, Tres grand, Enorme",
+    
+    "--- CUSTOM CSS (Feature 3) ---",
+    "Settings page has 'CSS personnalise' section with dark code textarea",
+    "data-testid='custom-css-textarea' present and functional",
+    "PUT /api/settings saves custom_css field",
+    "Display page injects custom_css into <style> tag",
+    "GET /api/settings returns custom_css",
+    
+    "--- WYSIWYG FONT SIZES (Feature 4) ---",
+    "Settings page has 'Tailles des textes WYSIWYG' section",
+    "6 numeric inputs present: Petit, Normal, Moyen, Grand, Tres grand, Enorme (all in px)",
+    "PUT /api/settings saves all wysiwyg_size_* fields",
+    "Display page generates CSS: font[size=1]→small, font[size=2]→normal, etc.",
+    "Settings shows current values: 14, 18, 24, 32, 48, 64 px",
+    
+    "--- RENAME PLAYLIST (Feature 5) ---",
+    "Playlists page has pencil icon (data-testid='rename-playlist-{id}')",
+    "Clicking pencil opens rename dialog with input (data-testid='rename-playlist-input')",
+    "Rename dialog has 'Renommer' button to confirm",
+    "PUT /api/playlists/{id} with name field works",
+    "Playlist name persists after rename",
+    
+    "--- AUTO-SAVE NAME IN EDITOR (Feature 5b) ---",
+    "PlaylistEditor has name input (data-testid='playlist-name-edit')",
+    "Name input has onBlur handler that calls savePlaylist()",
+    
+    "--- DEFAULT TRANSITION (Feature 6 - from iteration 5) ---",
+    "Settings Diffusion section has 'Transition par defaut' dropdown",
+    "Options: Fondu, Glissement, Aleatoire, Sans transition",
+    "data-testid='default-transition-select' present",
+    "PUT /api/settings saves default_transition",
+    
+    "--- DISPLAY PAGE VERIFICATION ---",
+    "Display page loads with header (72px), footer (44px)",
+    ".display-text-content element present for font size CSS",
+    "Font size CSS and custom_css injected via <style> tag",
+    "Display code 386621 working correctly"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_iteration6_features.py",
+    "/app/test_reports/pytest/pytest_iteration6.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_iteration6_features.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (12/12 tests passed)",
+    "frontend": "100% (all 5 features verified working)"
+  },
+
+  "test_credentials": {
+    "client": "demo@test.com / demo123"
+  },
+
+  "seed_data_creation": "Split-immersion test slide was temporarily added and cleaned up during testing",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Iteration 6 verified 5 new features: (1) Split-Immersion '50/50 Full Screen' layout - LAYOUTS array in PlaylistEditor.js includes {value: 'split-immersion', label: '50/50 Full Screen'}, Display.js checks slide.layout includes 'split-immersion' for immersion mode (no header/footer). (2) WYSIWYG Height - RichTextEditor.js has min-h-[250px] on contenteditable div. (3) Custom CSS - Settings.js has textarea data-testid='custom-css-textarea', SettingsUpdate model has custom_css field, Display.js injects via <style dangerouslySetInnerHTML>. (4) WYSIWYG Font Sizes - Settings.js has 6 NumField inputs (Petit/Normal/Moyen/Grand/Tres grand/Enorme), SettingsUpdate has wysiwyg_size_small/normal/medium/large/xlarge/huge, Display.js generates fontSizeCSS mapping font[size] to px values. (5) Rename Playlist - Playlists.js has pencil icon with data-testid='rename-playlist-{id}', showRename dialog, handleRename function calls PUT /api/playlists/{id}. PlaylistEditor.js name input has onBlur that calls savePlaylist() for auto-save. Display code: 386621. Playlist ID: b085ffb2-a06f-4f8a-b01f-24c303ba8f87."
+}

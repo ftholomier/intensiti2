@@ -113,6 +113,13 @@ class SettingsUpdate(BaseModel):
     ticker_text_enabled: Optional[bool] = None
     ticker_rss_enabled: Optional[bool] = None
     default_transition: Optional[str] = None
+    custom_css: Optional[str] = None
+    wysiwyg_size_small: Optional[int] = None
+    wysiwyg_size_normal: Optional[int] = None
+    wysiwyg_size_medium: Optional[int] = None
+    wysiwyg_size_large: Optional[int] = None
+    wysiwyg_size_xlarge: Optional[int] = None
+    wysiwyg_size_huge: Optional[int] = None
 
 class YouTubeMediaCreate(BaseModel):
     name: str

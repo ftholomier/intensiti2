@@ -10,7 +10,7 @@ import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Calendar } from '../components/ui/calendar';
-import { Plus, ListVideo, Edit, Trash2, Copy, CalendarIcon, Clock, X } from 'lucide-react';
+import { Plus, ListVideo, Edit, Trash2, Copy, CalendarIcon, Clock, X, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -77,6 +77,19 @@ export default function Playlists() {
     } catch {
       toast.error('Erreur lors de la duplication');
     }
+  };
+
+  const [showRename, setShowRename] = useState(null);
+  const [renameName, setRenameName] = useState('');
+
+  const handleRename = async () => {
+    if (!showRename || !renameName.trim()) return;
+    try {
+      await API.put(`/playlists/${showRename.id}`, { name: renameName.trim() });
+      toast.success('Playlist renommee');
+      setShowRename(null);
+      loadPlaylists();
+    } catch { toast.error('Erreur'); }
   };
 
   const saveSchedule = async () => {
@@ -156,7 +169,14 @@ export default function Playlists() {
                       <ListVideo className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-sm">{pl.name}</h3>
+                      <h3 className="font-semibold text-sm flex items-center gap-1.5">
+                        {pl.name}
+                        <button onClick={() => { setShowRename(pl); setRenameName(pl.name); }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-slate-600"
+                          data-testid={`rename-playlist-${pl.id}`}>
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                      </h3>
                       <p className="text-xs text-slate-400">{pl.slides?.length || 0} diapo(s)</p>
                     </div>
                   </div>
@@ -337,6 +357,23 @@ export default function Playlists() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSchedule(null)}>Annuler</Button>
             <Button onClick={saveSchedule} data-testid="save-schedule-btn">Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename playlist dialog */}
+      <Dialog open={!!showRename} onOpenChange={() => setShowRename(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Renommer la playlist</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <Label>Nouveau nom</Label>
+            <Input value={renameName} onChange={e => setRenameName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleRename()}
+              data-testid="rename-playlist-input" autoFocus />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRename(null)}>Annuler</Button>
+            <Button onClick={handleRename} data-testid="confirm-rename-btn">Renommer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

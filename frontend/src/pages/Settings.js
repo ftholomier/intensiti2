@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Upload, Save, Palette } from 'lucide-react';
+import { Upload, Save, Palette, Code, Type } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ColorField = ({ label, value, onChange }) => (
@@ -150,6 +150,38 @@ export default function SettingsPage() {
                 <p className="text-[10px] text-slate-400">Applique a toutes les diapos sans transition specifique</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* WYSIWYG Font Sizes */}
+        <Card>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Type className="h-4 w-4 text-primary" /> Tailles des textes WYSIWYG</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-[11px] text-slate-400 mb-4">Definissez la taille en pixels de chaque niveau de texte disponible dans l'editeur WYSIWYG. Ces valeurs sont appliquees sur les ecrans.</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <NumField label="Petit" value={s.wysiwyg_size_small} onChange={v => up('wysiwyg_size_small', v)} unit="px" min={8} max={40} />
+              <NumField label="Normal" value={s.wysiwyg_size_normal} onChange={v => up('wysiwyg_size_normal', v)} unit="px" min={10} max={60} />
+              <NumField label="Moyen" value={s.wysiwyg_size_medium} onChange={v => up('wysiwyg_size_medium', v)} unit="px" min={12} max={80} />
+              <NumField label="Grand" value={s.wysiwyg_size_large} onChange={v => up('wysiwyg_size_large', v)} unit="px" min={16} max={120} />
+              <NumField label="Tres grand" value={s.wysiwyg_size_xlarge} onChange={v => up('wysiwyg_size_xlarge', v)} unit="px" min={20} max={160} />
+              <NumField label="Enorme" value={s.wysiwyg_size_huge} onChange={v => up('wysiwyg_size_huge', v)} unit="px" min={24} max={200} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Custom CSS */}
+        <Card>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Code className="h-4 w-4 text-emerald-500" /> CSS personnalise</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-[11px] text-slate-400 mb-3">Collez ici du CSS personnalise qui sera injecte dans la page d'affichage. Ce CSS ecrase les styles par defaut.</p>
+            <textarea
+              value={s.custom_css || ''}
+              onChange={e => up('custom_css', e.target.value)}
+              placeholder={`/* Exemple */\n.display-text-content {\n  font-family: 'Georgia', serif;\n  letter-spacing: 0.02em;\n}`}
+              className="w-full h-48 p-4 font-mono text-xs bg-slate-900 text-emerald-400 rounded-lg border border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+              data-testid="custom-css-textarea"
+              spellCheck={false}
+            />
           </CardContent>
         </Card>
 

@@ -139,7 +139,7 @@ function SingleContent({ type, content, fitMode, onDone }) {
 /* Slide Content */
 function SlideContent({ slide, onDone }) {
   if (!slide) return null;
-  if (slide.layout === 'split') {
+  if (slide.layout === 'split' || slide.layout === 'split-immersion') {
     return (
       <div className="flex w-full h-full">
         <div className="w-1/2 h-full relative overflow-hidden border-r border-white/5">
@@ -285,7 +285,7 @@ export default function Display() {
   const scr = data?.screen || {};
   const flash = data?.flash_alert;
   const cur = slides[ci];
-  const immersion = scr.settings?.immersion || cur?.layout === 'immersion';
+  const immersion = scr.settings?.immersion || cur?.layout === 'immersion' || cur?.layout === 'split-immersion';
 
   const timeStr = time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   const secStr = time.toLocaleTimeString('fr-FR', { second: '2-digit' }).split(':').pop();
@@ -320,8 +320,20 @@ export default function Display() {
       <div className="w-8 h-8 border-2 border-indigo-400/30 border-t-indigo-400 rounded-full animate-spin" /></div>
   );
 
+  // Build WYSIWYG font size CSS
+  const fontSizeCSS = `
+    .display-text-content font[size="1"] { font-size: ${s.wysiwyg_size_small || 12}px !important; }
+    .display-text-content font[size="2"] { font-size: ${s.wysiwyg_size_normal || 16}px !important; }
+    .display-text-content font[size="3"] { font-size: ${s.wysiwyg_size_medium || 20}px !important; }
+    .display-text-content font[size="4"] { font-size: ${s.wysiwyg_size_large || 28}px !important; }
+    .display-text-content font[size="5"] { font-size: ${s.wysiwyg_size_xlarge || 40}px !important; }
+    .display-text-content font[size="6"], .display-text-content font[size="7"] { font-size: ${s.wysiwyg_size_huge || 56}px !important; }
+  `;
+
   return (
     <div className="fixed inset-0 bg-black text-white overflow-hidden select-none cursor-none" data-testid="display-view">
+      {/* Custom CSS + font size injection */}
+      <style dangerouslySetInnerHTML={{ __html: fontSizeCSS + (s.custom_css || '') }} />
       {flash?.is_active && (
         <div className="absolute inset-0 z-50 flex items-center justify-center animate-pulse-slow" style={{ background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)' }}>
           <div className="text-center px-12">

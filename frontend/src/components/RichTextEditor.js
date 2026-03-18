@@ -42,12 +42,12 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
         <Btn onClick={() => exec('justifyCenter')} title="Centre"><AlignCenter className="h-3.5 w-3.5" /></Btn>
         <Btn onClick={() => exec('justifyRight')} title="Droite"><AlignRight className="h-3.5 w-3.5" /></Btn>
         <div className="w-px h-6 bg-slate-200 mx-1" />
-        <select className="h-8 text-xs border border-slate-200 rounded-md px-2 bg-white" onChange={e => exec('fontSize', e.target.value)} defaultValue="4" data-testid="font-size-select">
-          <option value="2">Petit</option>
-          <option value="3">Normal</option>
-          <option value="4">Moyen</option>
-          <option value="5">Grand</option>
-          <option value="6">Tres grand</option>
+        <select className="h-8 text-xs border border-slate-200 rounded-md px-2 bg-white" onChange={e => exec('fontSize', e.target.value)} defaultValue="3" data-testid="font-size-select">
+          <option value="1">Petit</option>
+          <option value="2">Normal</option>
+          <option value="3">Moyen</option>
+          <option value="4">Grand</option>
+          <option value="5">Tres grand</option>
           <option value="7">Enorme</option>
         </select>
         <div className="w-px h-6 bg-slate-200 mx-1" />
@@ -58,7 +58,7 @@ export default function RichTextEditor({ value, onChange, placeholder }) {
         </div>
       </div>
       <div ref={editorRef} contentEditable suppressContentEditableWarning onInput={handleInput}
-        className="min-h-[120px] p-4 text-sm focus:outline-none bg-slate-900 text-white"
+        className="min-h-[250px] p-4 text-sm focus:outline-none bg-slate-900 text-white"
         style={{ lineHeight: '1.6' }} data-testid="rich-text-content" data-placeholder={placeholder || 'Saisissez votre texte...'} />
     </div>
   );

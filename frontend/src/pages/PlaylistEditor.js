@@ -35,6 +35,7 @@ const LAYOUTS = [
   { value: 'full', label: '100%' },
   { value: 'split', label: '50/50' },
   { value: 'immersion', label: 'Full Screen' },
+  { value: 'split-immersion', label: '50/50 Full Screen' },
 ];
 const FIT_MODES = [
   { value: 'fit', label: 'Ajuster' },
@@ -198,7 +199,7 @@ function SortableSlide({ slide, index, onEdit, onRemove, onDuplicate, onToggle }
   const meta = TYPE_META[slide.type] || TYPE_META.media;
   const Icon = meta.icon;
   const hasSchedule = slide.schedule_start || slide.schedule_end;
-  const isSplit = slide.layout === 'split';
+  const isSplit = slide.layout === 'split' || slide.layout === 'split-immersion';
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -329,7 +330,7 @@ export default function PlaylistEditor() {
   };
 
   const addSlide = () => {
-    const isSplit = addLayout === 'split';
+    const isSplit = addLayout === 'split' || addLayout === 'split-immersion';
     const s = {
       id: crypto.randomUUID(),
       type: isSplit ? 'split' : addType,
@@ -390,6 +391,7 @@ export default function PlaylistEditor() {
           </Button>
           <div className="min-w-0">
             <Input value={playlist.name} onChange={e => setPlaylist({ ...playlist, name: e.target.value })}
+              onBlur={() => savePlaylist()}
               className="text-xl font-bold border-0 p-0 h-auto focus-visible:ring-0 bg-transparent" data-testid="playlist-name-edit" />
             <p className="text-xs text-slate-400">{playlist.slides.length} diapo(s) &middot; Glissez pour reordonner</p>
           </div>
@@ -440,7 +442,7 @@ export default function PlaylistEditor() {
                 <SelectContent>{FIT_MODES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
           </div>
 
-          {addLayout === 'split' ? (
+          {(addLayout === 'split' || addLayout === 'split-immersion') ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-5 border rounded-xl bg-slate-50/50">
                 <ContentPicker label="Gauche" type={addLeftType} content={addLeftContent} onTypeChange={setAddLeftType} onContentChange={setAddLeftContent} media={media} />
@@ -521,7 +523,7 @@ export default function PlaylistEditor() {
           <DialogHeader><DialogTitle>Modifier la diapo</DialogTitle></DialogHeader>
           {editSlide && (
             <div className="space-y-5">
-              {editSlide.layout === 'split' ? (
+              {(editSlide.layout === 'split' || editSlide.layout === 'split-immersion') ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="p-5 border rounded-xl bg-slate-50/50">
                     <ContentPicker label="Gauche"
