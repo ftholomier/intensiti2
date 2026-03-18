@@ -5,76 +5,69 @@ SaaS solution for professional digital signage - browser-based full-screen displ
 
 ## Architecture
 - **Backend**: FastAPI + MongoDB (Motor async) + JWT auth
-- **Frontend**: React + Tailwind CSS + Shadcn UI + @dnd-kit
+- **Frontend**: React + Tailwind CSS + Shadcn UI + @dnd-kit + react-pdf
 - **Media Storage**: Local filesystem (/app/backend/uploads/)
 - **Weather**: OpenWeatherMap API
 - **Display**: Full-screen browser-based 3-zone layout
 
-## User Personas
-1. **Super Admin**: Manages client accounts, quotas, global monitoring
-2. **Client**: Manages screens, media library, playlists, display settings
-3. **Screen Viewer**: Passive display device showing content
+## What's Been Implemented (Complete)
 
-## Core Requirements (Static)
-- 2-level account system (Super Admin + Client)
-- Screen management with 6-digit pairing codes
-- Media library (images, videos, YouTube URLs)
-- Playlist editor with slides (add/edit/delete/duplicate/preview/schedule)
-- 3-zone display: Header (logo, time, date, weather), Central (media), Footer (ticker)
-- Slide transitions: fade, slide, random
-- Layout modes: 100%, 50/50 split (dual content), Immersion (fullscreen)
-- 50/50 split: independent content pickers for left/right sides (any type each)
-- Fit modes: Ajuster (contain) / Remplir (cover)
-- Content types: Media, QR Code, Countdown, Text (WYSIWYG), YouTube, RSS
-- Flash alerts
-- Client settings (colors, logo, footer text, ticker speed, RSS feeds)
-- Drag & drop slide reordering
-- Per-slide scheduling with calendar + time pickers
-- Playlist scheduling: date range, day-of-week (Lun-Dim), month (Jan-Dec)
-- Multiple RSS feeds in footer ticker
-- RSS slide type for main content area
-- Adjustable ticker speed
-- Force refresh button on screens
+### Content Types (7 types)
+1. **Media** (images, videos) - from media library
+2. **YouTube** - URL embed
+3. **QR Code** - auto-generated from URL
+4. **Countdown** - target date/time
+5. **Text** - WYSIWYG contentEditable editor
+6. **RSS** - Rotating feed titles from URL
+7. **PDF** - Page-by-page display with configurable duration per page (react-pdf)
+
+### Backend Features
+- JWT authentication (superadmin/client roles)
+- Client management (CRUD, quotas, suspension)
+- Screen management (CRUD, pairing codes, heartbeat, force refresh)
+- Media library (images, videos, PDFs upload + YouTube URLs)
+- Playlist CRUD with 7 slide types + duplication
+- **Advanced scheduling**: day-of-week (Mon-Sun), month (Jan-Dec), date range
+- **Scheduling respects default playlist**: assigned playlist also checked against its own schedule
+- Weather API (current + 3-day forecast via OpenWeatherMap)
+- RSS feed proxy (single + batch for multiple URLs)
+- Display data endpoint with scheduling logic
+- Settings: colors, sizes, logo, footer items, RSS items, ticker speed, ticker text/RSS toggles
+- Flash alerts, Ephemeris (saint du jour)
+
+### Frontend Features
+- Login page with role-based routing
+- Super Admin dashboard (clients management)
+- Client dashboard (screens, media, playlists, settings)
+- **Playlist Editor** (full-width popups 95vw):
+  - Drag-and-drop slide reordering (@dnd-kit)
+  - 7 content types with dedicated UIs
+  - **50/50 Split**: independent Gauche/Droite content pickers (any type each side)
+  - Per-slide settings: duration, transition, layout, fit mode
+  - Per-slide scheduling (start/end dates)
+  - WYSIWYG editor with large editing area (min-h-300px)
+  - MediaGrid shows ALL types (images, videos, PDFs)
+  - PDF slide: select from media library + configurable page_duration
+- **Playlist Scheduling Dialog**: dates, 7 day buttons (Lun-Dim), 12 month buttons (Jan-Dec)
+- **Display Page**: 3-zone layout with glassmorphism header, transitions, dynamic ticker
+- **Settings**: colors (7), sizes (8), logo, footer text items, RSS feeds (multiple), ticker speed slider, **ticker text/RSS toggles**
+- Screen management with force refresh button, preview link
 - Playlist duplication
-- 3-day weather forecast
 
-## What's Been Implemented
-
-### Backend (All working - 33/33 tests passing)
-- JWT authentication (login, token verification)
-- User management (super admin creates/suspends/deletes clients)
-- Screen CRUD + pairing + heartbeat + force refresh
-- Media upload/management (local storage)
-- Playlist CRUD with slides + duplication + scheduling (days, months, dates)
-- Weather API (current + 3-day forecast)
-- RSS feed proxy: GET /api/rss + POST /api/rss/batch (multi-URL)
-- Display data endpoint with scheduling logic (auto-selects playlist by day/month)
-- Flash alerts
-- Client settings (colors, logo, footer items, rss_items, ticker_speed)
-- Dashboard stats
-- Ephemeris (saint du jour)
-
-### Frontend (All working)
-- Login page
-- Role-based dashboard (Super Admin / Client)
-- Client management (Super Admin)
-- Screen management with force refresh button, preview
-- Media library with drag/drop upload, YouTube URLs
-- Playlist editor with DnD (@dnd-kit), WYSIWYG editor (contentEditable)
-- **50/50 Split**: Two independent content pickers (Gauche/Droite), each with own type selector
-- **RSS Slide Type**: Display RSS feed titles as rotating full-screen content
-- Full slide editing: content, duration, transition, layout, fit mode, scheduling
-- Display view with glassmorphism header, 3-day forecast, dynamic ticker speed, multi-RSS
-- **Playlist Scheduling**: Dialog with date range, 7 day buttons (Lun-Dim), 12 month buttons (Jan-Dec)
-- **Ticker Speed**: Slider control in Settings (Rapide → Lent)
-- **Multiple RSS Feeds**: Add/remove/toggle RSS URLs in Settings
-- Settings page with 7 color pickers, size controls, footer items, RSS management, logo upload, preview
-- Playlist duplication button
+### Display Rendering
+- 3-zone layout: Header (logo, time, date, weather+3-day forecast), Main (slides), Footer (ticker)
+- Slide transitions: fade, slide, random, none
+- Layouts: 100%, 50/50 split (dual content), Immersion (fullscreen, hides header/footer)
+- Fit modes: Ajuster (contain), Remplir (cover)
+- PDF slides: auto-advance pages with progress indicator
+- Dynamic ticker speed from settings
+- Ticker text/RSS independently toggleable
+- Flash alert overlay
 
 ## Test Results (March 18, 2026)
-- Backend: 100% (33/33 tests passed)
-- Frontend: 100% (all features working)
-- Test reports: /app/test_reports/iteration_2.json, /app/test_reports/iteration_3.json
+- iteration_2.json: 100% (33/33 backend)
+- iteration_3.json: 100% (33/33 backend, all frontend)
+- iteration_4.json: 100% (15/15 new features, all frontend)
 
 ## Credentials
 - Superadmin: admin@intensiti.com / admin123
@@ -88,7 +81,6 @@ SaaS solution for professional digital signage - browser-based full-screen displ
 - Ephemeris (saint du jour / citations) frontend integration
 
 ### P2 (Nice to Have)
-- PDF Smart rendering support
 - Eco mode scheduling (screen on/off times)
 - Remote screenshot capture
 - Service Worker offline cache
