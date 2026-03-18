@@ -179,7 +179,15 @@ export default function SettingsPage() {
 
         {/* Footer items */}
         <Card>
-          <CardHeader><CardTitle className="text-base">Bandeau defilant (textes)</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Bandeau defilant (textes)</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-slate-500">Actif</Label>
+                <Switch checked={s.ticker_text_enabled !== false} onCheckedChange={v => up('ticker_text_enabled', v)} data-testid="ticker-text-toggle" />
+              </div>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
               <Input value={newFooterText} onChange={e => setNewFooterText(e.target.value)} placeholder="Ajouter un texte defilant..."
@@ -211,7 +219,15 @@ export default function SettingsPage() {
 
         {/* RSS feeds */}
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Rss className="h-4 w-4 text-orange-500" /> Flux RSS (bandeau defilant)</CardTitle></CardHeader>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2"><Rss className="h-4 w-4 text-orange-500" /> Flux RSS (bandeau defilant)</CardTitle>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-slate-500">Actif</Label>
+                <Switch checked={s.ticker_rss_enabled !== false} onCheckedChange={v => up('ticker_rss_enabled', v)} data-testid="ticker-rss-toggle" />
+              </div>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-[11px] text-slate-400">Les titres de tous les flux RSS actifs seront ajoutes automatiquement au bandeau defilant.</p>
             <div className="flex gap-2">

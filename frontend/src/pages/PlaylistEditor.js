@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import API, { getMediaUrl } from '../lib/api';
 import { Button } from '../components/ui/button';
@@ -20,8 +20,8 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
   Plus, Trash2, Image, Film, Youtube, Type, QrCode, Timer,
-  Eye, EyeOff, Save, ArrowLeft, Copy, GripVertical, Maximize,
-  Columns, Monitor, Expand, Shrink, CalendarIcon, Clock, Edit2, X, Rss
+  Eye, EyeOff, Save, ArrowLeft, Copy, GripVertical,
+  Columns, Edit2, X, Rss, FileText, CalendarIcon, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -47,6 +47,7 @@ const CONTENT_TYPES = [
   { value: 'countdown', label: 'Compte a rebours', icon: Timer },
   { value: 'text', label: 'Texte', icon: Type },
   { value: 'rss', label: 'Flux RSS', icon: Rss },
+  { value: 'pdf', label: 'PDF', icon: FileText },
 ];
 const TYPE_META = {
   media: { label: 'Media', icon: Image, color: 'bg-blue-500' },
@@ -55,13 +56,13 @@ const TYPE_META = {
   countdown: { label: 'Compte a rebours', icon: Timer, color: 'bg-amber-500' },
   text: { label: 'Texte', icon: Type, color: 'bg-purple-500' },
   rss: { label: 'Flux RSS', icon: Rss, color: 'bg-orange-500' },
+  pdf: { label: 'PDF', icon: FileText, color: 'bg-rose-500' },
 };
 
 /* ── DateTimePicker ── */
 function DateTimePicker({ value, onChange, label }) {
   const dateVal = value ? new Date(value) : null;
   const timeStr = dateVal ? format(dateVal, 'HH:mm') : '';
-
   const setDate = (d) => {
     if (!d) { onChange(null); return; }
     const current = dateVal || new Date();
@@ -74,14 +75,13 @@ function DateTimePicker({ value, onChange, label }) {
     d.setHours(h, m, 0, 0);
     onChange(d.toISOString());
   };
-
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-medium text-slate-500">{label}</Label>
       <div className="flex gap-2">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="flex-1 justify-start text-xs font-normal h-9" data-testid={`datepicker-${label}`}>
+            <Button variant="outline" size="sm" className="flex-1 justify-start text-xs font-normal h-9">
               <CalendarIcon className="h-3.5 w-3.5 mr-2 text-slate-400" />
               {dateVal ? format(dateVal, 'dd MMM yyyy', { locale: fr }) : 'Date...'}
             </Button>
@@ -94,23 +94,53 @@ function DateTimePicker({ value, onChange, label }) {
           <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
           <Input type="time" value={timeStr} onChange={e => setTime(e.target.value)} className="h-9 w-28 pl-8 text-xs" />
         </div>
-        {value && (
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400" onClick={() => onChange(null)}>
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        )}
+        {value && <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400" onClick={() => onChange(null)}><X className="h-3.5 w-3.5" /></Button>}
       </div>
     </div>
   );
 }
 
-/* ── ContentPicker: reusable content selector for any side ── */
+/* ── MediaGrid: shows ALL media types ── */
+function MediaGrid({ media, selected, onSelect, className }) {
+  const getIcon = (m) => {
+    if (m.type === 'image') return Image;
+    if (m.type === 'video') return Film;
+    if (m.type === 'pdf') return FileText;
+    if (m.type === 'youtube') return Youtube;
+    return FileText;
+  };
+  return (
+    <div className={`grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 max-h-52 overflow-y-auto ${className || ''}`}>
+      {media.map(m => {
+        const Icon = getIcon(m);
+        const isSelected = selected?.media_id === m.id || selected?.url === m.url;
+        return (
+          <div key={m.id} onClick={() => onSelect({ url: m.url, name: m.name, type: m.type, media_id: m.id })}
+            className={`aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all relative group ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-300'}`}>
+            {m.type === 'image' ? (
+              <img src={getMediaUrl(m.url)} alt={m.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className={`w-full h-full flex flex-col items-center justify-center gap-1 ${m.type === 'pdf' ? 'bg-rose-50' : m.type === 'video' ? 'bg-slate-100' : 'bg-slate-50'}`}>
+                <Icon className={`h-5 w-5 ${m.type === 'pdf' ? 'text-rose-400' : m.type === 'video' ? 'text-blue-400' : 'text-slate-400'}`} />
+                <span className="text-[8px] uppercase font-bold tracking-wider text-slate-400">{m.type}</span>
+              </div>
+            )}
+            <div className="absolute bottom-0 inset-x-0 bg-black/60 px-1.5 py-0.5 text-[9px] text-white truncate opacity-0 group-hover:opacity-100 transition">{m.name}</div>
+          </div>
+        );
+      })}
+      {media.length === 0 && <p className="col-span-6 text-sm text-slate-400 py-6 text-center">Aucun media. Importez des fichiers d'abord.</p>}
+    </div>
+  );
+}
+
+/* ── ContentPicker ── */
 function ContentPicker({ type, content, onTypeChange, onContentChange, media, label }) {
   return (
     <div className="space-y-3">
-      {label && <Label className="text-sm font-semibold">{label}</Label>}
+      {label && <Label className="text-sm font-semibold text-slate-700">{label}</Label>}
       <Select value={type} onValueChange={onTypeChange}>
-        <SelectTrigger className="h-9" data-testid={`content-type-${label}`}>
+        <SelectTrigger className="h-9" data-testid={`content-type-${label || 'main'}`}>
           <SelectValue placeholder="Type de contenu" />
         </SelectTrigger>
         <SelectContent>
@@ -121,22 +151,8 @@ function ContentPicker({ type, content, onTypeChange, onContentChange, media, la
           ))}
         </SelectContent>
       </Select>
-
-      {type === 'media' && (
-        <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-          {media.filter(m => m.type === 'image' || m.type === 'video').map(m => (
-            <div key={m.id} onClick={() => onContentChange({ url: m.url, name: m.name, type: m.type, media_id: m.id })}
-              className={`aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all relative group ${content?.media_id === m.id ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-300'}`}>
-              {m.type === 'image' ? <img src={getMediaUrl(m.url)} alt={m.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center"><Film className="h-5 w-5 text-slate-400" /></div>}
-              <div className="absolute bottom-0 inset-x-0 bg-black/60 px-1.5 py-0.5 text-[9px] text-white truncate opacity-0 group-hover:opacity-100 transition">{m.name}</div>
-            </div>
-          ))}
-          {media.filter(m => m.type === 'image' || m.type === 'video').length === 0 && <p className="col-span-3 text-sm text-slate-400 py-4 text-center">Aucun media</p>}
-        </div>
-      )}
-      {type === 'youtube' && (
-        <Input value={content?.url || ''} onChange={e => onContentChange({ ...content, url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." />
-      )}
+      {type === 'media' && <MediaGrid media={media} selected={content} onSelect={onContentChange} />}
+      {type === 'youtube' && <Input value={content?.url || ''} onChange={e => onContentChange({ ...content, url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." />}
       {type === 'qrcode' && (
         <div className="space-y-2">
           <Input value={content?.url || ''} onChange={e => onContentChange({ ...content, url: e.target.value })} placeholder="https://votre-site.com" />
@@ -145,17 +161,30 @@ function ContentPicker({ type, content, onTypeChange, onContentChange, media, la
       )}
       {type === 'countdown' && (
         <div className="space-y-2">
-          <Input value={content?.label || ''} onChange={e => onContentChange({ ...content, label: e.target.value })} placeholder="Titre de l'evenement" />
+          <Input value={content?.label || ''} onChange={e => onContentChange({ ...content, label: e.target.value })} placeholder="Titre" />
           <Input type="datetime-local" value={content?.target_date || ''} onChange={e => onContentChange({ ...content, target_date: e.target.value })} />
         </div>
       )}
       {type === 'text' && (
-        <RichTextEditor value={content?.html || ''} onChange={html => onContentChange({ ...content, html, text: html.replace(/<[^>]+>/g, '') })} />
+        <div className="min-h-[200px]">
+          <RichTextEditor value={content?.html || ''} onChange={html => onContentChange({ ...content, html, text: html.replace(/<[^>]+>/g, '') })} />
+        </div>
       )}
       {type === 'rss' && (
         <div className="space-y-2">
           <Input value={content?.rss_url || ''} onChange={e => onContentChange({ ...content, rss_url: e.target.value })} placeholder="https://example.com/rss.xml" />
           <p className="text-[11px] text-slate-400">Les titres du flux RSS seront affiches dans la zone de contenu.</p>
+        </div>
+      )}
+      {type === 'pdf' && (
+        <div className="space-y-3">
+          <Label className="text-xs text-slate-500">Selectionnez un PDF depuis la mediatheque</Label>
+          <MediaGrid media={media.filter(m => m.type === 'pdf')} selected={content} onSelect={onContentChange} />
+          <div className="space-y-2">
+            <Label className="text-xs">Duree par page (secondes)</Label>
+            <Input type="number" value={content?.page_duration || 8} onChange={e => onContentChange({ ...content, page_duration: parseInt(e.target.value) || 8 })} min="2" max="120" className="w-32" />
+          </div>
+          <p className="text-[11px] text-slate-400">Toutes les pages du PDF seront affichees avant le passage a la diapo suivante.</p>
         </div>
       )}
     </div>
@@ -185,19 +214,13 @@ function SortableSlide({ slide, index, onEdit, onRemove, onDuplicate, onToggle }
               onClick={() => onEdit(slide)}>
               {isSplit ? (
                 <div className="flex w-full h-full">
-                  <div className="w-1/2 h-full border-r border-white/20 flex items-center justify-center">
-                    <Columns className="h-4 w-4 text-white/40" />
-                  </div>
-                  <div className="w-1/2 h-full flex items-center justify-center">
-                    <Columns className="h-4 w-4 text-white/40" />
-                  </div>
+                  <div className="w-1/2 h-full border-r border-white/20 flex items-center justify-center"><Columns className="h-4 w-4 text-white/40" /></div>
+                  <div className="w-1/2 h-full flex items-center justify-center"><Columns className="h-4 w-4 text-white/40" /></div>
                 </div>
               ) : slide.type === 'media' && slide.content?.type === 'image' ? (
                 <img src={getMediaUrl(slide.content.url)} alt="" className="w-full h-full object-cover" />
               ) : slide.type === 'text' ? (
                 <div className="w-full h-full p-1.5 overflow-hidden text-[8px] text-white" dangerouslySetInnerHTML={{ __html: slide.content?.html || '' }} />
-              ) : slide.type === 'rss' ? (
-                <Rss className="h-6 w-6 text-orange-400/60" />
               ) : (
                 <Icon className="h-6 w-6 text-white/60" />
               )}
@@ -216,19 +239,14 @@ function SortableSlide({ slide, index, onEdit, onRemove, onDuplicate, onToggle }
               <div className="flex items-center gap-1.5 flex-wrap">
                 <Badge variant="secondary" className="text-[9px] h-4 px-1.5">{isSplit ? '50/50' : meta.label}</Badge>
                 <Badge variant="outline" className="text-[9px] h-4 px-1.5">{slide.duration}s</Badge>
-                <Badge variant="outline" className="text-[9px] h-4 px-1.5">
-                  {TRANSITIONS.find(t => t.value === slide.transition)?.label}
-                </Badge>
+                <Badge variant="outline" className="text-[9px] h-4 px-1.5">{TRANSITIONS.find(t => t.value === slide.transition)?.label}</Badge>
                 {isSplit && (
                   <Badge className="text-[9px] h-4 px-1.5 bg-indigo-100 text-indigo-700 hover:bg-indigo-100">
                     <Columns className="h-2.5 w-2.5 mr-0.5" /> {TYPE_META[slide.split_left_type]?.label || '?'} | {TYPE_META[slide.split_right_type]?.label || '?'}
                   </Badge>
                 )}
-                {hasSchedule && (
-                  <Badge className="text-[9px] h-4 px-1.5 bg-amber-100 text-amber-700 hover:bg-amber-100">
-                    <CalendarIcon className="h-2.5 w-2.5 mr-0.5" /> Programme
-                  </Badge>
-                )}
+                {slide.type === 'pdf' && <Badge className="text-[9px] h-4 px-1.5 bg-rose-100 text-rose-700 hover:bg-rose-100"><FileText className="h-2.5 w-2.5 mr-0.5" /> {slide.content?.page_duration || 8}s/page</Badge>}
+                {hasSchedule && <Badge className="text-[9px] h-4 px-1.5 bg-amber-100 text-amber-700 hover:bg-amber-100"><CalendarIcon className="h-2.5 w-2.5 mr-0.5" /> Programme</Badge>}
               </div>
             </div>
             <div className="flex items-center gap-0.5 px-2 border-l border-slate-50">
@@ -260,14 +278,12 @@ export default function PlaylistEditor() {
   const [previewSlide, setPreviewSlide] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Add slide form state
   const [addType, setAddType] = useState('media');
   const [addContent, setAddContent] = useState({});
   const [addLayout, setAddLayout] = useState('full');
   const [addDuration, setAddDuration] = useState(10);
   const [addTransition, setAddTransition] = useState('fade');
   const [addFitMode, setAddFitMode] = useState('fit');
-  // Split state for add
   const [addLeftType, setAddLeftType] = useState('media');
   const [addLeftContent, setAddLeftContent] = useState({});
   const [addRightType, setAddRightType] = useState('text');
@@ -323,9 +339,6 @@ export default function PlaylistEditor() {
       s.split_left_content = { ...addLeftContent };
       s.split_right_type = addRightType;
       s.split_right_content = { ...addRightContent };
-    } else if (addType === 'media' && addContent?.media_id) {
-      const m = media.find(x => x.id === addContent.media_id);
-      if (m) s.content = { url: m.url, name: m.name, type: m.type, media_id: m.id };
     }
     setPlaylist({ ...playlist, slides: [...playlist.slides, s] });
     setShowAddSlide(false);
@@ -353,7 +366,6 @@ export default function PlaylistEditor() {
 
   return (
     <div className="animate-fade-in">
-      {/* Top bar */}
       <div className="flex items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" onClick={() => navigate('/playlists')} data-testid="back-playlists-btn">
@@ -362,7 +374,7 @@ export default function PlaylistEditor() {
           <div className="min-w-0">
             <Input value={playlist.name} onChange={e => setPlaylist({ ...playlist, name: e.target.value })}
               className="text-xl font-bold border-0 p-0 h-auto focus-visible:ring-0 bg-transparent" data-testid="playlist-name-edit" />
-            <p className="text-xs text-slate-400">{playlist.slides.length} diapo(s) &middot; Glissez pour reordonner &middot; Cliquez pour editer</p>
+            <p className="text-xs text-slate-400">{playlist.slides.length} diapo(s) &middot; Glissez pour reordonner</p>
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -375,101 +387,74 @@ export default function PlaylistEditor() {
         </div>
       </div>
 
-      {/* Slides list */}
       {playlist.slides.length === 0 ? (
         <Card className="p-12 text-center">
           <Image className="h-10 w-10 mx-auto text-slate-200 mb-3" />
           <p className="text-slate-400 font-medium">Playlist vide</p>
-          <Button className="mt-4" size="sm" onClick={() => setShowAddSlide(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Ajouter une diapo
-          </Button>
+          <Button className="mt-4" size="sm" onClick={() => setShowAddSlide(true)}><Plus className="h-4 w-4 mr-1" /> Ajouter une diapo</Button>
         </Card>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={playlist.slides.map(s => s.id)} strategy={verticalListSortingStrategy}>
             <div className="space-y-1.5">
               {playlist.slides.map((slide, i) => (
-                <SortableSlide key={slide.id} slide={slide} index={i}
-                  onEdit={setEditSlide} onRemove={removeSlide} onDuplicate={duplicateSlide} onToggle={toggleSlide} />
+                <SortableSlide key={slide.id} slide={slide} index={i} onEdit={setEditSlide} onRemove={removeSlide} onDuplicate={duplicateSlide} onToggle={toggleSlide} />
               ))}
             </div>
           </SortableContext>
         </DndContext>
       )}
 
-      {/* ═══ ADD SLIDE DIALOG ═══ */}
+      {/* ═══ ADD SLIDE DIALOG - FULL WIDTH ═══ */}
       <Dialog open={showAddSlide} onOpenChange={setShowAddSlide}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto" data-testid="add-slide-dialog">
           <DialogHeader><DialogTitle>Ajouter une diapo</DialogTitle></DialogHeader>
 
-          {/* Layout selector first */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
             <div><Label className="text-xs">Disposition</Label>
-              <Select value={addLayout} onValueChange={setAddLayout}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>{LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
+              <Select value={addLayout} onValueChange={setAddLayout}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>{LAYOUTS.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}</SelectContent></Select></div>
             <div><Label className="text-xs">Duree (s)</Label><Input type="number" className="mt-1" value={addDuration} onChange={e => setAddDuration(parseInt(e.target.value) || 10)} min="1" data-testid="slide-duration-input" /></div>
             <div><Label className="text-xs">Transition</Label>
-              <Select value={addTransition} onValueChange={setAddTransition}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>{TRANSITIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
+              <Select value={addTransition} onValueChange={setAddTransition}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>{TRANSITIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select></div>
             <div><Label className="text-xs">Affichage</Label>
-              <Select value={addFitMode} onValueChange={setAddFitMode}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>{FIT_MODES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
+              <Select value={addFitMode} onValueChange={setAddFitMode}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>{FIT_MODES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
           </div>
 
           {addLayout === 'split' ? (
-            /* ── 50/50 Split: two content pickers ── */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 border rounded-lg bg-slate-50">
-                <ContentPicker label="Gauche" type={addLeftType} content={addLeftContent}
-                  onTypeChange={setAddLeftType} onContentChange={setAddLeftContent} media={media} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-5 border rounded-xl bg-slate-50/50">
+                <ContentPicker label="Gauche" type={addLeftType} content={addLeftContent} onTypeChange={setAddLeftType} onContentChange={setAddLeftContent} media={media} />
               </div>
-              <div className="p-4 border rounded-lg bg-slate-50">
-                <ContentPicker label="Droite" type={addRightType} content={addRightContent}
-                  onTypeChange={setAddRightType} onContentChange={setAddRightContent} media={media} />
+              <div className="p-5 border rounded-xl bg-slate-50/50">
+                <ContentPicker label="Droite" type={addRightType} content={addRightContent} onTypeChange={setAddRightType} onContentChange={setAddRightContent} media={media} />
               </div>
             </div>
           ) : (
-            /* ── Standard single content ── */
             <Tabs value={addType} onValueChange={v => { setAddType(v); setAddContent({}); }}>
-              <TabsList className="w-full grid grid-cols-6">
+              <TabsList className="w-full grid grid-cols-7">
                 {CONTENT_TYPES.map(ct => (
                   <TabsTrigger key={ct.value} value={ct.value} data-testid={`slide-type-${ct.value}`}>
-                    <ct.icon className="h-3.5 w-3.5 mr-1.5" /> {ct.label}
+                    <ct.icon className="h-3.5 w-3.5 mr-1.5" /> <span className="hidden sm:inline">{ct.label}</span>
                   </TabsTrigger>
                 ))}
               </TabsList>
               <TabsContent value="media" className="mt-4">
-                <Label className="mb-2 block text-sm">Choisir un media</Label>
-                <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                  {media.filter(m => m.type === 'image' || m.type === 'video').map(m => (
-                    <div key={m.id} onClick={() => setAddContent({ url: m.url, name: m.name, type: m.type, media_id: m.id })}
-                      className={`aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all relative group ${addContent?.media_id === m.id ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-300'}`}>
-                      {m.type === 'image' ? <img src={getMediaUrl(m.url)} alt={m.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center"><Film className="h-5 w-5 text-slate-400" /></div>}
-                      <div className="absolute bottom-0 inset-x-0 bg-black/60 px-1.5 py-0.5 text-[9px] text-white truncate opacity-0 group-hover:opacity-100 transition">{m.name}</div>
-                    </div>
-                  ))}
-                  {media.filter(m => m.type === 'image' || m.type === 'video').length === 0 && <p className="col-span-4 text-sm text-slate-400 py-6 text-center">Aucun media. Importez des fichiers d'abord.</p>}
-                </div>
+                <Label className="mb-2 block text-sm">Choisir un media (images, videos, PDF)</Label>
+                <MediaGrid media={media} selected={addContent} onSelect={setAddContent} />
               </TabsContent>
               <TabsContent value="youtube" className="mt-4 space-y-3">
                 <Label>URL YouTube</Label>
-                <Input value={addContent.url || ''} onChange={e => setAddContent({ ...addContent, url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." data-testid="slide-youtube-url" />
+                <Input value={addContent.url || ''} onChange={e => setAddContent({ ...addContent, url: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." data-testid="slide-youtube-url" className="max-w-xl" />
               </TabsContent>
               <TabsContent value="qrcode" className="mt-4 space-y-3">
                 <Label>URL a encoder</Label>
-                <Input value={addContent.url || ''} onChange={e => setAddContent({ ...addContent, url: e.target.value })} placeholder="https://votre-site.com" data-testid="slide-qrcode-url" />
-                {addContent.url && <div className="flex justify-center p-4 bg-white rounded-lg border"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(addContent.url)}`} alt="QR" className="w-32 h-32" /></div>}
+                <Input value={addContent.url || ''} onChange={e => setAddContent({ ...addContent, url: e.target.value })} placeholder="https://votre-site.com" data-testid="slide-qrcode-url" className="max-w-xl" />
+                {addContent.url && <div className="flex justify-center p-4 bg-white rounded-lg border w-fit"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(addContent.url)}`} alt="QR" className="w-32 h-32" /></div>}
               </TabsContent>
-              <TabsContent value="countdown" className="mt-4 space-y-3">
+              <TabsContent value="countdown" className="mt-4 space-y-3 max-w-xl">
                 <Label>Titre</Label>
                 <Input value={addContent.label || ''} onChange={e => setAddContent({ ...addContent, label: e.target.value })} placeholder="Evenement" data-testid="slide-countdown-label" />
                 <Label>Date cible</Label>
@@ -477,12 +462,31 @@ export default function PlaylistEditor() {
               </TabsContent>
               <TabsContent value="text" className="mt-4 space-y-3">
                 <Label>Contenu (WYSIWYG)</Label>
-                <RichTextEditor value={addContent.html || ''} onChange={html => setAddContent({ ...addContent, html, text: html.replace(/<[^>]+>/g, '') })} />
+                <div className="min-h-[300px]">
+                  <RichTextEditor value={addContent.html || ''} onChange={html => setAddContent({ ...addContent, html, text: html.replace(/<[^>]+>/g, '') })} />
+                </div>
               </TabsContent>
               <TabsContent value="rss" className="mt-4 space-y-3">
                 <Label>URL du flux RSS</Label>
-                <Input value={addContent.rss_url || ''} onChange={e => setAddContent({ ...addContent, rss_url: e.target.value })} placeholder="https://example.com/rss.xml" data-testid="slide-rss-url" />
+                <Input value={addContent.rss_url || ''} onChange={e => setAddContent({ ...addContent, rss_url: e.target.value })} placeholder="https://example.com/rss.xml" data-testid="slide-rss-url" className="max-w-xl" />
                 <p className="text-[11px] text-slate-400">Les titres du flux RSS seront affiches en plein ecran.</p>
+              </TabsContent>
+              <TabsContent value="pdf" className="mt-4 space-y-3">
+                <Label>Selectionnez un PDF depuis la mediatheque</Label>
+                <MediaGrid media={media.filter(m => m.type === 'pdf')} selected={addContent} onSelect={setAddContent} />
+                {media.filter(m => m.type === 'pdf').length === 0 && (
+                  <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed">
+                    <FileText className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                    <p className="text-sm text-slate-400">Aucun PDF dans la mediatheque.</p>
+                    <p className="text-xs text-slate-400 mt-1">Importez un fichier PDF via la Mediatheque d'abord.</p>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 max-w-xs">
+                  <Label className="text-xs whitespace-nowrap">Duree par page</Label>
+                  <Input type="number" value={addContent.page_duration || 8} onChange={e => setAddContent({ ...addContent, page_duration: parseInt(e.target.value) || 8 })} min="2" max="120" className="w-20" />
+                  <span className="text-xs text-slate-400">sec</span>
+                </div>
+                <p className="text-[11px] text-slate-400">Chaque page du PDF sera affichee automatiquement avant le passage a la diapo suivante.</p>
               </TabsContent>
             </Tabs>
           )}
@@ -494,79 +498,76 @@ export default function PlaylistEditor() {
         </DialogContent>
       </Dialog>
 
-      {/* ═══ EDIT SLIDE DIALOG ═══ */}
+      {/* ═══ EDIT SLIDE DIALOG - FULL WIDTH ═══ */}
       <Dialog open={!!editSlide} onOpenChange={() => setEditSlide(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] w-full max-h-[90vh] overflow-y-auto" data-testid="edit-slide-dialog">
           <DialogHeader><DialogTitle>Modifier la diapo</DialogTitle></DialogHeader>
           {editSlide && (
             <div className="space-y-5">
-              {/* 50/50 split editing */}
               {editSlide.layout === 'split' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 border rounded-lg bg-slate-50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="p-5 border rounded-xl bg-slate-50/50">
                     <ContentPicker label="Gauche"
-                      type={editSlide.split_left_type || 'media'}
-                      content={editSlide.split_left_content || {}}
+                      type={editSlide.split_left_type || 'media'} content={editSlide.split_left_content || {}}
                       onTypeChange={v => setEditSlide({ ...editSlide, split_left_type: v, split_left_content: {} })}
-                      onContentChange={c => setEditSlide({ ...editSlide, split_left_content: c })}
-                      media={media} />
+                      onContentChange={c => setEditSlide({ ...editSlide, split_left_content: c })} media={media} />
                   </div>
-                  <div className="p-4 border rounded-lg bg-slate-50">
+                  <div className="p-5 border rounded-xl bg-slate-50/50">
                     <ContentPicker label="Droite"
-                      type={editSlide.split_right_type || 'text'}
-                      content={editSlide.split_right_content || {}}
+                      type={editSlide.split_right_type || 'text'} content={editSlide.split_right_content || {}}
                       onTypeChange={v => setEditSlide({ ...editSlide, split_right_type: v, split_right_content: {} })}
-                      onContentChange={c => setEditSlide({ ...editSlide, split_right_content: c })}
-                      media={media} />
+                      onContentChange={c => setEditSlide({ ...editSlide, split_right_content: c })} media={media} />
                   </div>
                 </div>
               ) : (
-                /* Standard content editing by type */
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 mb-2">
                     {(() => { const M = TYPE_META[editSlide.type]; return M ? <><M.icon className="h-4 w-4" /><span className="text-sm font-medium">{M.label}</span></> : null; })()}
                   </div>
                   {editSlide.type === 'media' && (
-                    <div>
-                      <Label className="mb-2 block">Changer le media</Label>
-                      <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto">
-                        {media.filter(m => m.type === 'image' || m.type === 'video').map(m => (
-                          <div key={m.id} onClick={() => setEditSlide({ ...editSlide, media_id: m.id, content: { url: m.url, name: m.name, type: m.type, media_id: m.id } })}
-                            className={`aspect-video rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${editSlide.content?.media_id === m.id || editSlide.content?.url === m.url ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-slate-300'}`}>
-                            {m.type === 'image' ? <img src={getMediaUrl(m.url)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 flex items-center justify-center"><Film className="h-5 w-5 text-slate-400" /></div>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <div><Label className="mb-2 block">Changer le media</Label>
+                      <MediaGrid media={media} selected={editSlide.content} onSelect={c => setEditSlide({ ...editSlide, content: c })} /></div>
                   )}
                   {editSlide.type === 'youtube' && (
-                    <div><Label>URL YouTube</Label><Input className="mt-1" value={editSlide.content?.url || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, url: e.target.value } })} data-testid="edit-youtube-url" /></div>
+                    <div><Label>URL YouTube</Label><Input className="mt-1 max-w-xl" value={editSlide.content?.url || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, url: e.target.value } })} data-testid="edit-youtube-url" /></div>
                   )}
                   {editSlide.type === 'qrcode' && (
                     <div className="space-y-3">
-                      <div><Label>URL du QR Code</Label><Input className="mt-1" value={editSlide.content?.url || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, url: e.target.value } })} data-testid="edit-qrcode-url" /></div>
-                      {editSlide.content?.url && <div className="flex justify-center p-3 bg-white rounded-lg border"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(editSlide.content.url)}`} alt="QR" className="w-28 h-28" /></div>}
+                      <div><Label>URL du QR Code</Label><Input className="mt-1 max-w-xl" value={editSlide.content?.url || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, url: e.target.value } })} data-testid="edit-qrcode-url" /></div>
+                      {editSlide.content?.url && <div className="flex justify-center p-3 bg-white rounded-lg border w-fit"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(editSlide.content.url)}`} alt="QR" className="w-28 h-28" /></div>}
                     </div>
                   )}
                   {editSlide.type === 'countdown' && (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-w-xl">
                       <div><Label>Titre</Label><Input className="mt-1" value={editSlide.content?.label || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, label: e.target.value } })} /></div>
                       <div><Label>Date cible</Label><Input type="datetime-local" className="mt-1" value={editSlide.content?.target_date || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, target_date: e.target.value } })} /></div>
                     </div>
                   )}
                   {editSlide.type === 'text' && (
-                    <RichTextEditor value={editSlide.content?.html || ''} onChange={html => setEditSlide({ ...editSlide, content: { ...editSlide.content, html, text: html.replace(/<[^>]+>/g, '') } })} />
+                    <div className="min-h-[300px]">
+                      <RichTextEditor value={editSlide.content?.html || ''} onChange={html => setEditSlide({ ...editSlide, content: { ...editSlide.content, html, text: html.replace(/<[^>]+>/g, '') } })} />
+                    </div>
                   )}
                   {editSlide.type === 'rss' && (
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-w-xl">
                       <Label>URL du flux RSS</Label>
                       <Input value={editSlide.content?.rss_url || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, rss_url: e.target.value } })} placeholder="https://example.com/rss.xml" />
+                    </div>
+                  )}
+                  {editSlide.type === 'pdf' && (
+                    <div className="space-y-3">
+                      <Label>PDF depuis la mediatheque</Label>
+                      <MediaGrid media={media.filter(m => m.type === 'pdf')} selected={editSlide.content} onSelect={c => setEditSlide({ ...editSlide, content: c })} />
+                      <div className="flex items-center gap-3 max-w-xs">
+                        <Label className="text-xs whitespace-nowrap">Duree par page</Label>
+                        <Input type="number" value={editSlide.content?.page_duration || 8} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, page_duration: parseInt(e.target.value) || 8 } })} min="2" max="120" className="w-20" />
+                        <span className="text-xs text-slate-400">sec</span>
+                      </div>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Display options */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-3 border-t">
                 <div><Label className="text-xs">Duree (s)</Label><Input type="number" className="mt-1" value={editSlide.duration} onChange={e => setEditSlide({ ...editSlide, duration: parseInt(e.target.value) || 5 })} min="1" data-testid="edit-duration" /></div>
                 <div><Label className="text-xs">Transition</Label><Select value={editSlide.transition} onValueChange={v => setEditSlide({ ...editSlide, transition: v })}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{TRANSITIONS.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent></Select></div>
@@ -574,26 +575,19 @@ export default function PlaylistEditor() {
                 <div><Label className="text-xs">Affichage</Label><Select value={editSlide.fit_mode || 'fit'} onValueChange={v => setEditSlide({ ...editSlide, fit_mode: v })}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{FIT_MODES.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}</SelectContent></Select></div>
               </div>
 
-              {/* Schedule */}
               <div className="pt-3 border-t">
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-primary" /> Programmation
-                </h4>
+                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2"><CalendarIcon className="h-4 w-4 text-primary" /> Programmation</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <DateTimePicker label="Debut de diffusion" value={editSlide.schedule_start} onChange={v => setEditSlide({ ...editSlide, schedule_start: v })} />
-                  <DateTimePicker label="Fin de diffusion" value={editSlide.schedule_end} onChange={v => setEditSlide({ ...editSlide, schedule_end: v })} />
+                  <DateTimePicker label="Debut" value={editSlide.schedule_start} onChange={v => setEditSlide({ ...editSlide, schedule_start: v })} />
+                  <DateTimePicker label="Fin" value={editSlide.schedule_end} onChange={v => setEditSlide({ ...editSlide, schedule_end: v })} />
                 </div>
               </div>
 
-              {/* Active toggle */}
               <div className="flex items-center justify-between pt-3 border-t">
                 <div className="flex items-center gap-2">
                   <Switch checked={editSlide.is_active} onCheckedChange={v => setEditSlide({ ...editSlide, is_active: v })} data-testid="edit-active-toggle" />
                   <Label>{editSlide.is_active ? 'Active' : 'Desactivee'}</Label>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setPreviewSlide(editSlide)} data-testid="edit-preview-btn">
-                  <Eye className="h-4 w-4 mr-1.5" /> Apercu
-                </Button>
               </div>
             </div>
           )}
@@ -603,50 +597,6 @@ export default function PlaylistEditor() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* ═══ PREVIEW DIALOG ═══ */}
-      <Dialog open={!!previewSlide} onOpenChange={() => setPreviewSlide(null)}>
-        <DialogContent className="max-w-4xl p-0 overflow-hidden">
-          <div className="aspect-video bg-black relative">
-            {previewSlide && <SlidePreview slide={previewSlide} />}
-          </div>
-          <div className="p-3 flex justify-end"><Button variant="outline" size="sm" onClick={() => setPreviewSlide(null)}>Fermer</Button></div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
-}
-
-function SlidePreview({ slide }) {
-  const c = slide.content || {};
-  const fit = slide.fit_mode === 'fill' ? 'cover' : 'contain';
-  if (slide.layout === 'split') {
-    return (
-      <div className="flex w-full h-full">
-        <div className="w-1/2 h-full relative overflow-hidden border-r border-white/10">
-          <SingleContentPreview type={slide.split_left_type} content={slide.split_left_content} fitMode={fit} />
-        </div>
-        <div className="w-1/2 h-full relative overflow-hidden">
-          <SingleContentPreview type={slide.split_right_type} content={slide.split_right_content} fitMode={fit} />
-        </div>
-      </div>
-    );
-  }
-  return <SingleContentPreview type={slide.type} content={c} fitMode={fit} />;
-}
-
-function SingleContentPreview({ type, content, fitMode }) {
-  const c = content || {};
-  const fit = fitMode || 'contain';
-  if (type === 'media' && c.type === 'image') return <img src={getMediaUrl(c.url)} alt="" className="w-full h-full" style={{ objectFit: fit }} />;
-  if (type === 'media' && c.type === 'video') return <video src={getMediaUrl(c.url)} autoPlay muted loop className="w-full h-full" style={{ objectFit: fit }} />;
-  if (type === 'youtube') {
-    const m = (c.url || '').match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([^&?/]+)/);
-    return m ? <iframe src={`https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1`} className="w-full h-full" frameBorder="0" allow="autoplay" allowFullScreen title="YT" /> : <p className="text-white text-center pt-20">URL invalide</p>;
-  }
-  if (type === 'qrcode') return <div className="flex items-center justify-center h-full bg-slate-900"><div className="bg-white p-6 rounded-2xl"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(c.url || '')}`} alt="QR" className="w-56 h-56" /></div></div>;
-  if (type === 'countdown') return <div className="flex flex-col items-center justify-center h-full bg-slate-900 text-white"><p className="text-2xl mb-4 opacity-70">{c.label}</p><p className="text-5xl font-mono font-bold">00:00:00:00</p></div>;
-  if (type === 'text') return <div className="flex items-center justify-center h-full bg-slate-900 p-8"><div className="text-white text-xl max-w-3xl" dangerouslySetInnerHTML={{ __html: c.html || c.text || '' }} /></div>;
-  if (type === 'rss') return <div className="flex items-center justify-center h-full bg-slate-900 p-8"><Rss className="h-12 w-12 text-orange-400 mr-4" /><p className="text-white text-xl">Flux RSS: {c.rss_url || '...'}</p></div>;
-  return null;
 }

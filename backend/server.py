@@ -110,6 +110,8 @@ class SettingsUpdate(BaseModel):
     footer_rss_url: Optional[str] = None
     rss_items: Optional[List[Dict[str, Any]]] = None
     ticker_speed: Optional[int] = None
+    ticker_text_enabled: Optional[bool] = None
+    ticker_rss_enabled: Optional[bool] = None
 
 class YouTubeMediaCreate(BaseModel):
     name: str
@@ -239,7 +241,9 @@ async def create_client(data: ClientCreate, request: Request):
         "footer_items": [{"id": str(uuid.uuid4()), "text": "Bienvenue", "is_active": True, "order": 0}],
         "footer_rss_url": "",
         "rss_items": [],
-        "ticker_speed": 30
+        "ticker_speed": 30,
+        "ticker_text_enabled": True,
+        "ticker_rss_enabled": True
     }
     await db.client_settings.insert_one(settings)
     return {"id": client_id, "email": data.email, "company_name": data.company_name}
@@ -528,45 +532,56 @@ async def get_display_data(code: str):
     if not screen:
         raise HTTPException(status_code=404, detail="Ecran non trouve")
     settings = await db.client_settings.find_one({"client_id": screen["client_id"]}, {"_id": 0})
-    playlist = None
-    if screen.get("playlist_id"):
-        playlist = await db.playlists.find_one({"id": screen["playlist_id"]}, {"_id": 0})
-    # Check scheduled playlists - find a matching one for today
     now = datetime.now(timezone.utc)
     current_day = now.weekday()  # 0=Monday, 6=Sunday
     current_month = now.month  # 1-12
-    scheduled_playlist = None
-    client_playlists = await db.playlists.find({"client_id": screen["client_id"]}, {"_id": 0}).to_list(1000)
-    for pl in client_playlists:
-        pl_days = pl.get("schedule_days")
-        pl_months = pl.get("schedule_months")
+
+    def playlist_matches_schedule(pl):
+        pl_days = pl.get("schedule_days") or []
+        pl_months = pl.get("schedule_months") or []
         pl_start = pl.get("schedule_start")
         pl_end = pl.get("schedule_end")
-        if not pl_days and not pl_months and not pl_start:
-            continue
-        # Check date range
+        has_schedule = bool(pl_days) or bool(pl_months) or pl_start or pl_end
+        if not has_schedule:
+            return True  # No schedule = always show
         if pl_start:
             try:
                 if datetime.fromisoformat(pl_start) > now:
-                    continue
+                    return False
             except Exception:
                 pass
         if pl_end:
             try:
                 if datetime.fromisoformat(pl_end) < now:
-                    continue
+                    return False
             except Exception:
                 pass
-        # Check day of week (0=Mon..6=Sun)
         day_match = not pl_days or current_day in pl_days
-        # Check month
         month_match = not pl_months or current_month in pl_months
-        if day_match and month_match and pl.get("is_active", True):
-            scheduled_playlist = pl
+        return day_match and month_match
+
+    # Load default assigned playlist, but respect its schedule
+    playlist = None
+    if screen.get("playlist_id"):
+        default_pl = await db.playlists.find_one({"id": screen["playlist_id"]}, {"_id": 0})
+        if default_pl and playlist_matches_schedule(default_pl):
+            playlist = default_pl
+
+    # Check ALL client playlists for a scheduled override
+    client_playlists = await db.playlists.find({"client_id": screen["client_id"]}, {"_id": 0}).to_list(1000)
+    for pl in client_playlists:
+        if pl.get("id") == screen.get("playlist_id"):
+            continue  # Skip default, already handled
+        pl_days = pl.get("schedule_days") or []
+        pl_months = pl.get("schedule_months") or []
+        pl_start = pl.get("schedule_start")
+        pl_end = pl.get("schedule_end")
+        has_schedule = bool(pl_days) or bool(pl_months) or pl_start or pl_end
+        if not has_schedule:
+            continue
+        if playlist_matches_schedule(pl) and pl.get("is_active", True):
+            playlist = pl
             break
-    # Scheduled playlist takes priority
-    if scheduled_playlist:
-        playlist = scheduled_playlist
     flash_alert = await db.flash_alerts.find_one(
         {"client_id": screen["client_id"], "is_active": True}, {"_id": 0}
     )
@@ -722,7 +737,8 @@ async def get_settings(request: Request):
             "client_id": client_id, "logo_url": "", "primary_color": "#4F46E5",
             "secondary_color": "#F1F5F9", "header_bg": "#1E293B", "footer_bg": "#1E293B",
             "text_color": "#FFFFFF", "footer_text": "Bienvenue", "footer_rss_url": "",
-            "rss_items": [], "ticker_speed": 30
+            "rss_items": [], "ticker_speed": 30,
+            "ticker_text_enabled": True, "ticker_rss_enabled": True
         }
         await db.client_settings.insert_one(settings)
         settings.pop("_id", None)

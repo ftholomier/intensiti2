@@ -1,6 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { getMediaUrl } from '../lib/api';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -36,27 +41,21 @@ function CountdownWidget({ targetDate, label }) {
   );
 }
 
-/* RSS Slide Content */
+/* RSS Slide */
 function RssSlideContent({ rssUrl }) {
   const [items, setItems] = useState([]);
   const [ci, setCi] = useState(0);
-
   useEffect(() => {
     if (!rssUrl) return;
     fetch(`${BACKEND_URL}/api/rss?url=${encodeURIComponent(rssUrl)}`)
-      .then(r => r.json())
-      .then(d => { if (d.items) setItems(d.items); })
-      .catch(() => {});
+      .then(r => r.json()).then(d => { if (d.items) setItems(d.items); }).catch(() => {});
   }, [rssUrl]);
-
   useEffect(() => {
     if (items.length <= 1) return;
     const i = setInterval(() => setCi(p => (p + 1) % items.length), 6000);
     return () => clearInterval(i);
   }, [items.length]);
-
   if (items.length === 0) return <div className="flex items-center justify-center h-full text-white/30">Chargement du flux RSS...</div>;
-
   return (
     <div className="flex flex-col items-center justify-center h-full px-12 text-white">
       <div className="text-center max-w-4xl">
@@ -72,22 +71,84 @@ function RssSlideContent({ rssUrl }) {
   );
 }
 
-/* Single Content Renderer (used for both full and split) */
-function SingleContent({ type, content, fitMode }) {
+/* PDF Slide: renders all pages sequentially, then signals done */
+function PdfSlideContent({ url, pageDuration, onAllPagesShown }) {
+  const [numPages, setNumPages] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [containerSize, setContainerSize] = useState({ width: 800, height: 600 });
+  const containerRef = useRef(null);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setContainerSize({ width: rect.width, height: rect.height });
+    }
+  }, []);
+
+  const onDocumentLoadSuccess = ({ numPages: np }) => {
+    setNumPages(np);
+    setCurrentPage(1);
+  };
+
+  useEffect(() => {
+    if (!numPages || numPages <= 0) return;
+    const dur = (pageDuration || 8) * 1000;
+    timerRef.current = setTimeout(() => {
+      if (currentPage < numPages) {
+        setCurrentPage(p => p + 1);
+      } else {
+        // All pages shown, signal parent
+        if (onAllPagesShown) onAllPagesShown();
+      }
+    }, dur);
+    return () => clearTimeout(timerRef.current);
+  }, [currentPage, numPages, pageDuration, onAllPagesShown]);
+
+  const pdfUrl = url ? getMediaUrl(url) : null;
+
+  return (
+    <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full bg-white relative overflow-hidden">
+      {pdfUrl && (
+        <Document file={pdfUrl} onLoadSuccess={onDocumentLoadSuccess}
+          loading={<div className="text-slate-400 text-lg">Chargement du PDF...</div>}
+          error={<div className="text-red-400 text-lg">Erreur de chargement PDF</div>}>
+          <Page pageNumber={currentPage} height={containerSize.height - 40}
+            renderTextLayer={false} renderAnnotationLayer={false} />
+        </Document>
+      )}
+      {numPages && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 px-4 py-1.5 rounded-full">
+          <span className="text-white text-xs font-medium">{currentPage} / {numPages}</span>
+          <div className="flex gap-1">
+            {Array.from({ length: numPages }, (_, i) => (
+              <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i + 1 === currentPage ? 'w-4 bg-white' : 'w-1 bg-white/30'}`} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Single Content Renderer */
+function SingleContent({ type, content, fitMode, onDone }) {
   const c = content || {};
   const fit = fitMode === 'fill' ? 'cover' : 'contain';
   if (type === 'media' && c.type === 'image') return <img src={getMediaUrl(c.url)} alt="" className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
   if (type === 'media' && c.type === 'video') return <video src={getMediaUrl(c.url)} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
+  if (type === 'media' && c.type === 'pdf') return <PdfSlideContent url={c.url} pageDuration={c.page_duration} onAllPagesShown={onDone} />;
   if (type === 'youtube') { const ytId = extractYouTubeId(c.url); return ytId ? <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0`} className="absolute inset-0 w-full h-full" frameBorder="0" allow="autoplay" allowFullScreen title="YT" /> : null; }
   if (type === 'qrcode') return <div className="flex flex-col items-center justify-center h-full"><div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl shadow-white/10"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(c.url || 'https://example.com')}`} alt="QR" className="w-48 h-48 md:w-64 md:h-64" /></div><p className="text-white/40 text-xs mt-4 max-w-xs truncate">{c.url}</p></div>;
   if (type === 'countdown') return <CountdownWidget targetDate={c.target_date} label={c.label} />;
   if (type === 'text') return <div className="flex items-center justify-center h-full px-8 md:px-20"><div className="display-text-content" dangerouslySetInnerHTML={{ __html: c.html || c.text || '' }} /></div>;
   if (type === 'rss') return <RssSlideContent rssUrl={c.rss_url} />;
+  if (type === 'pdf') return <PdfSlideContent url={c.url} pageDuration={c.page_duration} onAllPagesShown={onDone} />;
   return null;
 }
 
-/* Slide Content - delegates to SingleContent or split */
-function SlideContent({ slide }) {
+/* Slide Content */
+function SlideContent({ slide, onDone }) {
   if (!slide) return null;
   if (slide.layout === 'split') {
     return (
@@ -101,7 +162,7 @@ function SlideContent({ slide }) {
       </div>
     );
   }
-  return <SingleContent type={slide.type} content={slide.content} fitMode={slide.fit_mode} />;
+  return <SingleContent type={slide.type} content={slide.content} fitMode={slide.fit_mode} onDone={onDone} />;
 }
 
 const DAYS_FR = { monday: 'Lun', tuesday: 'Mar', wednesday: 'Mer', thursday: 'Jeu', friday: 'Ven', saturday: 'Sam', sunday: 'Dim' };
@@ -119,6 +180,7 @@ export default function Display() {
   const [err, setErr] = useState(null);
   const stRef = useRef(null);
   const ttRef = useRef(null);
+  const pdfDoneRef = useRef(false);
 
   const fetchData = useCallback(async () => {
     if (!code) return;
@@ -145,27 +207,18 @@ export default function Display() {
 
   const fetchRss = useCallback(async () => {
     const s = data?.settings || {};
-    // Collect all RSS URLs: legacy single + rss_items array
+    if (s.ticker_rss_enabled === false) { setRssItems([]); return; }
     const urls = [];
     if (s.footer_rss_url) urls.push(s.footer_rss_url);
-    const rssItemsList = (s.rss_items || []).filter(i => i.is_active);
-    rssItemsList.forEach(i => { if (i.url) urls.push(i.url); });
-
+    (s.rss_items || []).filter(i => i.is_active).forEach(i => { if (i.url) urls.push(i.url); });
     if (urls.length === 0) { setRssItems([]); return; }
-
     try {
       if (urls.length === 1) {
         const r = await fetch(`${BACKEND_URL}/api/rss?url=${encodeURIComponent(urls[0])}`);
-        const d = await r.json();
-        if (d.items) setRssItems(d.items);
+        const d = await r.json(); if (d.items) setRssItems(d.items);
       } else {
-        const r = await fetch(`${BACKEND_URL}/api/rss/batch`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ urls })
-        });
-        const d = await r.json();
-        if (d.items) setRssItems(d.items);
+        const r = await fetch(`${BACKEND_URL}/api/rss/batch`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ urls }) });
+        const d = await r.json(); if (d.items) setRssItems(d.items);
       }
     } catch {}
   }, [data?.settings]);
@@ -177,10 +230,6 @@ export default function Display() {
   useEffect(() => { fetchRss(); }, [fetchRss]);
   useEffect(() => { const i = setInterval(fetchRss, 600000); return () => clearInterval(i); }, [fetchRss]);
   useEffect(() => { const i = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(i); }, []);
-  useEffect(() => {
-    const h = (e) => { if (e.key === 'F5') { e.preventDefault(); fetchData(); fetchWeather(); fetchRss(); } };
-    window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h);
-  }, [fetchData, fetchWeather, fetchRss]);
 
   const slides = (data?.playlist?.slides || []).filter(s => {
     if (!s.is_active) return false;
@@ -190,17 +239,32 @@ export default function Display() {
     return true;
   });
 
+  const advanceSlide = useCallback(() => {
+    if (slides.length <= 1) return;
+    const ni = (ci + 1) % slides.length;
+    setPi(ci); setCi(ni); setTrans(true);
+    pdfDoneRef.current = false;
+    ttRef.current = setTimeout(() => { setTrans(false); setPi(-1); }, 1000);
+  }, [ci, slides.length]);
+
   useEffect(() => {
     if (slides.length <= 1) return;
-    const dur = (slides[ci]?.duration || 10) * 1000;
-    stRef.current = setTimeout(() => {
-      const ni = (ci + 1) % slides.length;
-      setPi(ci); setCi(ni); setTrans(true);
-      ttRef.current = setTimeout(() => { setTrans(false); setPi(-1); }, 1000);
-    }, dur);
+    const cur = slides[ci];
+    // For PDF slides, wait for onAllPagesShown callback instead of timer
+    const isPdf = cur?.type === 'pdf' || (cur?.content?.type === 'pdf');
+    if (isPdf) return; // Don't set timer, PDF controls its own advancement
+
+    const dur = (cur?.duration || 10) * 1000;
+    stRef.current = setTimeout(advanceSlide, dur);
     return () => { clearTimeout(stRef.current); clearTimeout(ttRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ci, slides.length]);
+  }, [ci, slides.length, advanceSlide, slides]);
+
+  const handlePdfDone = useCallback(() => {
+    if (!pdfDoneRef.current) {
+      pdfDoneRef.current = true;
+      advanceSlide();
+    }
+  }, [advanceSlide]);
 
   const tClass = (slide, entering) => {
     let t = slide?.transition || 'fade';
@@ -220,13 +284,13 @@ export default function Display() {
   const secStr = time.toLocaleTimeString('fr-FR', { second: '2-digit' }).split(':').pop();
   const dateStr = time.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Build ticker text
-  const footerItems = (s.footer_items || []).filter(i => i.is_active).map(i => i.text);
-  const allTickerTexts = [...footerItems, ...rssItems];
+  // Ticker: combine footer text items + RSS items based on toggles
+  const footerTexts = (s.ticker_text_enabled !== false) ? (s.footer_items || []).filter(i => i.is_active).map(i => i.text) : [];
+  const rssTexts = (s.ticker_rss_enabled !== false) ? rssItems : [];
+  const allTickerTexts = [...footerTexts, ...rssTexts];
   const tickerText = allTickerTexts.length > 0 ? allTickerTexts.join('   \u2022   ') : (s.footer_text || 'Bienvenue');
   const tickerSpeed = s.ticker_speed || 30;
 
-  // Block style helper
   const blockStyle = {
     background: s.block_bg || 'rgba(255,255,255,0.06)',
     padding: `${s.block_padding_v || 6}px ${s.block_padding_h || 14}px`,
@@ -252,7 +316,6 @@ export default function Display() {
 
   return (
     <div className="fixed inset-0 bg-black text-white overflow-hidden select-none cursor-none" data-testid="display-view">
-      {/* Flash Alert */}
       {flash?.is_active && (
         <div className="absolute inset-0 z-50 flex items-center justify-center animate-pulse-slow" style={{ background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)' }}>
           <div className="text-center px-12">
@@ -315,7 +378,9 @@ export default function Display() {
             {trans && pi >= 0 && pi < slides.length && (
               <div className={`absolute inset-0 z-10 ${tClass(slides[ci], false)}`}><SlideContent slide={slides[pi]} /></div>
             )}
-            <div className={`absolute inset-0 z-20 ${trans ? tClass(slides[ci], true) : ''}`}><SlideContent slide={slides[ci]} /></div>
+            <div className={`absolute inset-0 z-20 ${trans ? tClass(slides[ci], true) : ''}`}>
+              <SlideContent slide={slides[ci]} onDone={handlePdfDone} />
+            </div>
           </div>
         )}
       </div>

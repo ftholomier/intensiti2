@@ -1,0 +1,87 @@
+{
+  "summary": "Comprehensive testing of 6 bug fixes/features for Intensiti digital signage completed. All backend tests (15/15) passed and frontend UI features verified working. Features: (1) Playlist scheduling respects day/month constraints including default playlist, (2) Media library shows ALL file types (images, videos, PDFs), (3) Full-width dialogs (95vw), (4) Ticker text/RSS toggles, (5) PDF slide support with page-by-page display, (6) 50/50 split slide content persistence verified.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "--- TICKER TOGGLES (6 tests) ---",
+    "GET /api/settings returns ticker_text_enabled and ticker_rss_enabled fields",
+    "PUT /api/settings with ticker_text_enabled=false saves correctly",
+    "PUT /api/settings with ticker_text_enabled=true saves correctly",
+    "PUT /api/settings with ticker_rss_enabled=false saves correctly",
+    "PUT /api/settings with ticker_rss_enabled=true saves correctly",
+    "GET /api/display/{code} returns settings with ticker toggles",
+    
+    "--- PLAYLIST SCHEDULING (3 tests) ---",
+    "Create playlist with schedule_days=[3] saves correctly",
+    "Display endpoint respects schedule_days constraints",
+    "Clearing schedule (empty arrays) allows playlist to display",
+    
+    "--- PDF SLIDE SUPPORT (2 tests) ---",
+    "PDF media type='pdf' retrievable from /api/media",
+    "PDF slide with type='pdf', page_duration saves to playlist correctly",
+    
+    "--- 50/50 SPLIT SLIDE (2 tests) ---",
+    "Split slide with split_left_type/content and split_right_type/content persists correctly",
+    "Edit split slide - changing left/right content types saves correctly",
+    
+    "--- CONTENT TYPES (1 test) ---",
+    "All 7 content types (media, youtube, qrcode, countdown, text, rss, pdf) save to playlist",
+    
+    "--- DEFAULT PLAYLIST SCHEDULING (1 test) ---",
+    "Default assigned playlist schedule_days/schedule_months checked by display endpoint",
+    
+    "--- FRONTEND UI VERIFIED ---",
+    "Settings page: ticker_text_enabled toggle visible and functional",
+    "Settings page: ticker_rss_enabled toggle visible and functional",
+    "Settings page: 'Bandeau defilant (textes)' card with Actif toggle",
+    "Settings page: 'Flux RSS (bandeau defilant)' card with Actif toggle",
+    "Playlist Editor: Add slide dialog uses max-w-[95vw] - 95% viewport width verified",
+    "Playlist Editor: Edit slide dialog uses max-w-[95vw] - 95% viewport width verified",
+    "Playlist Editor: 7 content type tabs present (Media, YouTube, QR Code, Compte a rebours, Texte, Flux RSS, PDF)",
+    "Playlist Editor: PDF tab shows 'Selectionnez un PDF depuis la mediatheque' with page_duration input",
+    "Playlist Editor: 50/50 layout shows Gauche (Left) and Droite (Right) content pickers",
+    "Playlist Editor: MediaGrid label shows 'Choisir un media (images, videos, PDF)' - all types displayed",
+    "Display page: Header (72px), footer ticker (44px), main content area all visible",
+    "Display page: RSS headlines scrolling in footer ticker"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_iteration4_features.py",
+    "/app/test_reports/pytest/pytest_iteration4.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_iteration4_features.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (15/15 tests passed)",
+    "frontend": "100% (all new features working)"
+  },
+
+  "test_credentials": {
+    "superadmin": "admin@intensiti.com / admin123",
+    "client": "demo@test.com / demo123"
+  },
+
+  "seed_data_creation": "Test playlists created and cleaned up automatically by pytest",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Iteration 4 verified 6 features: (1) Scheduling now checks default assigned playlist AND any scheduled override playlists. Backend function playlist_matches_schedule() in /api/display/{code} checks schedule_days (0-6 Mon-Sun), schedule_months (1-12), schedule_start, schedule_end. Empty arrays = no restriction. (2) MediaGrid component shows all types (images, videos, PDFs) - label says 'images, videos, PDF'. (3) Dialog max-w-[95vw] verified at 1824px on 1920px viewport = 95%. Both add-slide-dialog and edit-slide-dialog use this. (4) ticker_text_enabled and ticker_rss_enabled in SettingsUpdate model and client_settings collection. UI has Switch toggles in card headers. (5) PDF slide type='pdf' with content.page_duration for seconds per page. PdfSlideContent component uses react-pdf with pdfjs worker from unpkg CDN. (6) Split slides store split_left_type, split_left_content, split_right_type, split_right_content. Display code: 386621. Today is weekday=1 (Tuesday)."
+}
