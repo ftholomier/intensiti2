@@ -1,4 +1,4 @@
-// 12 subtle, professional background animations for the display area
+// 12 background animations for the display area - VISIBLE and professional
 // Each targets [data-testid="display-animation-overlay"]
 
 const ANIMATIONS = [
@@ -14,7 +14,7 @@ const ANIMATIONS = [
     desc: 'Lignes fines qui se deplacent lentement',
     css: `/* ANIM:lignes-fluides */
 [data-testid="display-animation-overlay"] {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0.07;
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0.25;
 }
 [data-testid="display-animation-overlay"]::before {
   content: ''; position: absolute; inset: -50%;
@@ -42,16 +42,16 @@ const ANIMATIONS = [
     css: `/* ANIM:fondu-gradient */
 [data-testid="display-animation-overlay"] {
   position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
-  background: radial-gradient(ellipse at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.02) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 20% 50%, rgba(255,255,255,0.12) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.10) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.08) 0%, transparent 50%);
   animation: anim-fondu-shift 45s ease-in-out infinite alternate;
 }
 @keyframes anim-fondu-shift {
-  0% { opacity: 0.4; filter: hue-rotate(0deg); }
-  33% { opacity: 0.7; filter: hue-rotate(15deg); }
-  66% { opacity: 0.5; filter: hue-rotate(-10deg); }
-  100% { opacity: 0.6; filter: hue-rotate(5deg); }
+  0% { opacity: 0.5; filter: hue-rotate(0deg); }
+  33% { opacity: 0.8; filter: hue-rotate(15deg); }
+  66% { opacity: 0.6; filter: hue-rotate(-10deg); }
+  100% { opacity: 0.7; filter: hue-rotate(5deg); }
 }`,
   },
   {
@@ -60,34 +60,38 @@ const ANIMATIONS = [
     desc: 'Points lumineux flottants',
     css: `/* ANIM:particules */
 [data-testid="display-animation-overlay"] {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0.5;
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0.8;
 }
 [data-testid="display-animation-overlay"]::before {
-  content: ''; position: absolute; inset: 0;
+  content: ''; position: absolute; width: 100%; height: 200%;
   background:
-    radial-gradient(1.5px 1.5px at 10% 20%, rgba(255,255,255,0.5) 50%, transparent 50%),
-    radial-gradient(1px 1px at 25% 55%, rgba(255,255,255,0.4) 50%, transparent 50%),
-    radial-gradient(2px 2px at 40% 10%, rgba(255,255,255,0.3) 50%, transparent 50%),
-    radial-gradient(1px 1px at 55% 75%, rgba(255,255,255,0.5) 50%, transparent 50%),
-    radial-gradient(1.5px 1.5px at 70% 35%, rgba(255,255,255,0.4) 50%, transparent 50%),
-    radial-gradient(1px 1px at 85% 65%, rgba(255,255,255,0.3) 50%, transparent 50%),
-    radial-gradient(2px 2px at 15% 85%, rgba(255,255,255,0.4) 50%, transparent 50%),
-    radial-gradient(1px 1px at 90% 15%, rgba(255,255,255,0.5) 50%, transparent 50%);
-  animation: anim-particules-float 50s linear infinite;
+    radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.7) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 25% 55%, rgba(255,255,255,0.6) 50%, transparent 50%),
+    radial-gradient(3px 3px at 40% 10%, rgba(255,255,255,0.5) 50%, transparent 50%),
+    radial-gradient(2px 2px at 55% 75%, rgba(255,255,255,0.7) 50%, transparent 50%),
+    radial-gradient(2.5px 2.5px at 70% 35%, rgba(255,255,255,0.6) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 85% 65%, rgba(255,255,255,0.5) 50%, transparent 50%),
+    radial-gradient(3px 3px at 15% 85%, rgba(255,255,255,0.6) 50%, transparent 50%),
+    radial-gradient(2px 2px at 90% 15%, rgba(255,255,255,0.7) 50%, transparent 50%),
+    radial-gradient(2px 2px at 50% 45%, rgba(255,255,255,0.5) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 35% 95%, rgba(255,255,255,0.6) 50%, transparent 50%);
+  animation: anim-particules-float 60s linear infinite;
 }
 [data-testid="display-animation-overlay"]::after {
-  content: ''; position: absolute; inset: 0;
+  content: ''; position: absolute; width: 100%; height: 200%;
   background:
-    radial-gradient(1px 1px at 5% 45%, rgba(255,255,255,0.4) 50%, transparent 50%),
-    radial-gradient(1.5px 1.5px at 35% 30%, rgba(255,255,255,0.3) 50%, transparent 50%),
-    radial-gradient(1px 1px at 60% 90%, rgba(255,255,255,0.5) 50%, transparent 50%),
-    radial-gradient(2px 2px at 80% 50%, rgba(255,255,255,0.3) 50%, transparent 50%),
-    radial-gradient(1px 1px at 45% 5%, rgba(255,255,255,0.4) 50%, transparent 50%),
-    radial-gradient(1.5px 1.5px at 95% 80%, rgba(255,255,255,0.3) 50%, transparent 50%);
-  animation: anim-particules-float2 65s linear infinite;
+    radial-gradient(2px 2px at 5% 45%, rgba(255,255,255,0.6) 50%, transparent 50%),
+    radial-gradient(2.5px 2.5px at 35% 30%, rgba(255,255,255,0.5) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 60% 90%, rgba(255,255,255,0.7) 50%, transparent 50%),
+    radial-gradient(3px 3px at 80% 50%, rgba(255,255,255,0.5) 50%, transparent 50%),
+    radial-gradient(2px 2px at 45% 5%, rgba(255,255,255,0.6) 50%, transparent 50%),
+    radial-gradient(2.5px 2.5px at 95% 80%, rgba(255,255,255,0.5) 50%, transparent 50%),
+    radial-gradient(2px 2px at 20% 70%, rgba(255,255,255,0.4) 50%, transparent 50%),
+    radial-gradient(1.5px 1.5px at 75% 15%, rgba(255,255,255,0.6) 50%, transparent 50%);
+  animation: anim-particules-float2 75s linear infinite;
 }
-@keyframes anim-particules-float { 0% { transform: translateY(0); } 100% { transform: translateY(-100%); } }
-@keyframes anim-particules-float2 { 0% { transform: translateY(0) translateX(0); } 100% { transform: translateY(-80%) translateX(5%); } }`,
+@keyframes anim-particules-float { 0% { transform: translateY(0); } 100% { transform: translateY(-50%); } }
+@keyframes anim-particules-float2 { 0% { transform: translateY(0) translateX(0); } 100% { transform: translateY(-50%) translateX(3%); } }`,
   },
   {
     id: 'vagues',
@@ -98,14 +102,14 @@ const ANIMATIONS = [
   position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
 }
 [data-testid="display-animation-overlay"]::before {
-  content: ''; position: absolute; bottom: -10%; left: -10%; right: -10%; height: 50%;
-  background: radial-gradient(ellipse at 30% 100%, rgba(255,255,255,0.04) 0%, transparent 60%),
-              radial-gradient(ellipse at 70% 100%, rgba(255,255,255,0.03) 0%, transparent 60%);
+  content: ''; position: absolute; bottom: -10%; left: -10%; right: -10%; height: 60%;
+  background: radial-gradient(ellipse at 30% 100%, rgba(255,255,255,0.12) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 100%, rgba(255,255,255,0.10) 0%, transparent 60%);
   animation: anim-vagues 20s ease-in-out infinite alternate;
 }
 [data-testid="display-animation-overlay"]::after {
-  content: ''; position: absolute; bottom: -5%; left: -5%; right: -5%; height: 40%;
-  background: radial-gradient(ellipse at 50% 100%, rgba(255,255,255,0.02) 0%, transparent 70%);
+  content: ''; position: absolute; bottom: -5%; left: -5%; right: -5%; height: 50%;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255,255,255,0.08) 0%, transparent 70%);
   animation: anim-vagues2 15s ease-in-out infinite alternate-reverse;
 }
 @keyframes anim-vagues { 0% { transform: translateX(-3%) scaleY(0.9); } 100% { transform: translateX(3%) scaleY(1.1); } }
@@ -117,7 +121,7 @@ const ANIMATIONS = [
     desc: 'Quadrillage subtil en mouvement',
     css: `/* ANIM:grille */
 [data-testid="display-animation-overlay"] {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0.04;
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0.15;
 }
 [data-testid="display-animation-overlay"]::before {
   content: ''; position: absolute; inset: -50%; width: 200%; height: 200%;
@@ -140,17 +144,17 @@ const ANIMATIONS = [
 [data-testid="display-animation-overlay"]::before {
   content: ''; position: absolute; inset: -20%;
   background:
-    radial-gradient(ellipse at 15% 50%, rgba(255,255,255,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 30%, rgba(255,255,255,0.04) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.05) 0%, transparent 45%);
+    radial-gradient(ellipse at 15% 50%, rgba(255,255,255,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 30%, rgba(255,255,255,0.12) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 80%, rgba(255,255,255,0.13) 0%, transparent 45%);
   filter: blur(40px);
   animation: anim-brume 50s ease-in-out infinite alternate;
 }
 [data-testid="display-animation-overlay"]::after {
   content: ''; position: absolute; inset: -20%;
   background:
-    radial-gradient(ellipse at 70% 60%, rgba(255,255,255,0.04) 0%, transparent 45%),
-    radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.03) 0%, transparent 40%);
+    radial-gradient(ellipse at 70% 60%, rgba(255,255,255,0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.10) 0%, transparent 40%);
   filter: blur(50px);
   animation: anim-brume2 60s ease-in-out infinite alternate-reverse;
 }
@@ -169,12 +173,12 @@ const ANIMATIONS = [
   content: ''; position: absolute;
   top: 50%; left: 50%; width: 80%; height: 80%;
   transform: translate(-50%,-50%);
-  background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
   animation: anim-pulse 8s ease-in-out infinite;
 }
 @keyframes anim-pulse {
   0%, 100% { transform: translate(-50%,-50%) scale(0.8); opacity: 0.3; }
-  50% { transform: translate(-50%,-50%) scale(1.2); opacity: 0.7; }
+  50% { transform: translate(-50%,-50%) scale(1.2); opacity: 0.8; }
 }`,
   },
   {
@@ -183,7 +187,7 @@ const ANIMATIONS = [
     desc: 'Lignes diagonales glissantes',
     css: `/* ANIM:diagonales */
 [data-testid="display-animation-overlay"] {
-  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0.04;
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; opacity: 0.15;
 }
 [data-testid="display-animation-overlay"]::before {
   content: ''; position: absolute; inset: -100%; width: 300%; height: 300%;
@@ -208,13 +212,13 @@ const ANIMATIONS = [
   top: 50%; left: 50%; width: 200%; height: 200%;
   transform: translate(-50%,-50%);
   background:
-    radial-gradient(circle, transparent 20%, rgba(255,255,255,0.015) 20.5%, transparent 21%),
-    radial-gradient(circle, transparent 35%, rgba(255,255,255,0.012) 35.5%, transparent 36%),
-    radial-gradient(circle, transparent 50%, rgba(255,255,255,0.01) 50.5%, transparent 51%),
-    radial-gradient(circle, transparent 65%, rgba(255,255,255,0.008) 65.5%, transparent 66%);
+    radial-gradient(circle, transparent 20%, rgba(255,255,255,0.05) 20.5%, transparent 21.5%),
+    radial-gradient(circle, transparent 35%, rgba(255,255,255,0.04) 35.5%, transparent 36.5%),
+    radial-gradient(circle, transparent 50%, rgba(255,255,255,0.035) 50.5%, transparent 51.5%),
+    radial-gradient(circle, transparent 65%, rgba(255,255,255,0.03) 65.5%, transparent 66.5%);
   animation: anim-cercles 30s linear infinite;
 }
-@keyframes anim-cercles { 0% { transform: translate(-50%,-50%) scale(0.5); opacity: 0.8; } 100% { transform: translate(-50%,-50%) scale(1.5); opacity: 0; } }`,
+@keyframes anim-cercles { 0% { transform: translate(-50%,-50%) scale(0.5); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1.5); opacity: 0; } }`,
   },
   {
     id: 'eclat',
@@ -227,7 +231,7 @@ const ANIMATIONS = [
 [data-testid="display-animation-overlay"]::before {
   content: ''; position: absolute;
   top: -50%; width: 30%; height: 200%;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 55%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 45%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.08) 55%, transparent 100%);
   transform: skewX(-15deg);
   animation: anim-eclat 12s ease-in-out infinite;
 }
@@ -246,19 +250,19 @@ const ANIMATIONS = [
 [data-testid="display-animation-overlay"]::before {
   content: ''; position: absolute; inset: 0;
   background:
-    radial-gradient(circle 80px at 15% 30%, rgba(255,255,255,0.04) 0%, transparent 100%),
-    radial-gradient(circle 120px at 75% 20%, rgba(255,255,255,0.03) 0%, transparent 100%),
-    radial-gradient(circle 60px at 45% 70%, rgba(255,255,255,0.035) 0%, transparent 100%),
-    radial-gradient(circle 90px at 85% 75%, rgba(255,255,255,0.025) 0%, transparent 100%),
-    radial-gradient(circle 70px at 25% 85%, rgba(255,255,255,0.03) 0%, transparent 100%);
+    radial-gradient(circle 80px at 15% 30%, rgba(255,255,255,0.12) 0%, transparent 100%),
+    radial-gradient(circle 120px at 75% 20%, rgba(255,255,255,0.10) 0%, transparent 100%),
+    radial-gradient(circle 60px at 45% 70%, rgba(255,255,255,0.11) 0%, transparent 100%),
+    radial-gradient(circle 90px at 85% 75%, rgba(255,255,255,0.08) 0%, transparent 100%),
+    radial-gradient(circle 70px at 25% 85%, rgba(255,255,255,0.10) 0%, transparent 100%);
   animation: anim-bokeh 40s ease-in-out infinite alternate;
 }
 [data-testid="display-animation-overlay"]::after {
   content: ''; position: absolute; inset: 0;
   background:
-    radial-gradient(circle 100px at 60% 40%, rgba(255,255,255,0.03) 0%, transparent 100%),
-    radial-gradient(circle 70px at 30% 50%, rgba(255,255,255,0.025) 0%, transparent 100%),
-    radial-gradient(circle 110px at 90% 45%, rgba(255,255,255,0.02) 0%, transparent 100%);
+    radial-gradient(circle 100px at 60% 40%, rgba(255,255,255,0.10) 0%, transparent 100%),
+    radial-gradient(circle 70px at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 100%),
+    radial-gradient(circle 110px at 90% 45%, rgba(255,255,255,0.07) 0%, transparent 100%);
   animation: anim-bokeh2 55s ease-in-out infinite alternate-reverse;
 }
 @keyframes anim-bokeh { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(3%,-2%) scale(1.05); } }

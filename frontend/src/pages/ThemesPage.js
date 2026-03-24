@@ -100,20 +100,23 @@ export default function ThemesPage() {
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    API.get('/settings').then(r => {
+    API.get('/settings').then(async (r) => {
       const s = r.data;
       setSettings(s);
       if (s?.selected_theme_id) setActiveTheme(s.selected_theme_id);
-      else {
-        const css = s?.custom_css || '';
-        const tm = css.match(/\/\* THEME:(\S+) \*\//);
-        if (tm) setActiveTheme(tm[1]);
-      }
       if (s?.selected_animation_id) setActiveAnim(s.selected_animation_id);
-      else {
-        const css = s?.custom_css || '';
+
+      // Migration: if old theme CSS is in custom_css, move to theme_css
+      const css = s?.custom_css || '';
+      if (css.includes('/* THEME:') && !s?.theme_css) {
+        const tm = css.match(/\/\* THEME:(\S+) \*\//);
         const am = css.match(/\/\* ANIM:(\S+) \*\//);
+        if (tm) setActiveTheme(tm[1]);
         if (am) setActiveAnim(am[1]);
+        try {
+          await API.put('/settings', { theme_css: css, custom_css: '', selected_theme_id: tm?.[1] || '', selected_animation_id: am?.[1] || 'none' });
+          setSettings(prev => ({ ...prev, theme_css: css, custom_css: '' }));
+        } catch {}
       }
     }).catch(() => {});
   }, []);
@@ -128,7 +131,7 @@ export default function ThemesPage() {
       const combinedCss = theme.css + (anim && anim.css ? '\n' + anim.css : '');
       const update = {
         ...theme.settings,
-        custom_css: combinedCss,
+        theme_css: combinedCss,
         selected_theme_id: themeId,
         selected_animation_id: animId || 'none',
       };

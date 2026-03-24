@@ -190,7 +190,7 @@ export default function Display() {
   }, [code]);
 
   const fetchWeather = useCallback(async () => {
-    const city = data?.screen?.weather_city;
+    const city = data?.settings?.weather_city || data?.screen?.weather_city;
     if (!city) return;
     try {
       const [wr, fr] = await Promise.all([
@@ -201,7 +201,7 @@ export default function Display() {
       if (wd.temp != null) setWeather(wd);
       if (fd.forecast) setForecast(fd.forecast);
     } catch {}
-  }, [data?.screen?.weather_city]);
+  }, [data?.settings?.weather_city, data?.screen?.weather_city]);
 
   const fetchRss = useCallback(async () => {
     const s = data?.settings || {};
@@ -288,7 +288,7 @@ export default function Display() {
   const immersion = scr.settings?.immersion || cur?.layout === 'immersion' || cur?.layout === 'split-immersion';
 
   const timeStr = time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  const secStr = time.toLocaleTimeString('fr-FR', { second: '2-digit' }).split(':').pop();
+  const secStr = String(time.getSeconds()).padStart(2, '0');
   const dateStr = time.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   const footerTexts = (s.ticker_text_enabled !== false) ? (s.footer_items || []).filter(i => i.is_active).map(i => i.text) : [];
@@ -330,10 +330,28 @@ export default function Display() {
     .display-text-content font[size="6"], .display-text-content font[size="7"] { font-size: ${s.wysiwyg_size_huge || 56}px !important; }
   `;
 
+  // Eco mode check
+  const ecoActive = (() => {
+    if (!s.eco_mode_enabled || !s.eco_mode_start || !s.eco_mode_end) return false;
+    const now = time.getHours() * 60 + time.getMinutes();
+    const [sh, sm] = s.eco_mode_start.split(':').map(Number);
+    const [eh, em] = s.eco_mode_end.split(':').map(Number);
+    const start = sh * 60 + sm;
+    const end = eh * 60 + em;
+    if (start <= end) return now >= start && now < end;
+    return now >= start || now < end;
+  })();
+
+  if (ecoActive) return (
+    <div className="fixed inset-0 bg-black" data-testid="eco-mode">
+      <style dangerouslySetInnerHTML={{ __html: '#emergent-badge { display:none!important; }' }} />
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 bg-black text-white overflow-hidden select-none cursor-none" data-testid="display-view">
-      {/* Custom CSS + font size injection */}
-      <style dangerouslySetInnerHTML={{ __html: fontSizeCSS + (s.custom_css || '') }} />
+      {/* Custom CSS + font size + theme CSS injection */}
+      <style dangerouslySetInnerHTML={{ __html: fontSizeCSS + (s.theme_css || '') + '\n' + (s.custom_css || '') + '\n#emergent-badge{display:none!important;visibility:hidden!important;width:0!important;height:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;}' }} />
       {flash?.is_active && (
         <div className="absolute inset-0 z-50 flex items-center justify-center animate-pulse-slow" style={{ background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)' }}>
           <div className="text-center px-12">

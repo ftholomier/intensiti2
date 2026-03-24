@@ -11,6 +11,7 @@ import PlaylistEditor from './pages/PlaylistEditor';
 import SettingsPage from './pages/Settings';
 import TickerPage from './pages/TickerPage';
 import ThemesPage from './pages/ThemesPage';
+import FlashInfoPage from './pages/FlashInfoPage';
 import Display from './pages/Display';
 import './App.css';
 
@@ -87,6 +88,11 @@ function AppRoutes() {
       <Route path="/themes" element={
         <ProtectedRoute allowedRoles={['client']}>
           <ThemesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/flash-info" element={
+        <ProtectedRoute allowedRoles={['client']}>
+          <FlashInfoPage />
         </ProtectedRoute>
       } />
 

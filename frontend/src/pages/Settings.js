@@ -5,7 +5,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Upload, Save, Palette, Code, Type } from 'lucide-react';
+import { Switch } from '../components/ui/switch';
+import { Upload, Save, Palette, Code, Type, CloudSun, Moon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ColorField = ({ label, value, onChange }) => (
@@ -54,7 +55,7 @@ export default function SettingsPage() {
         const lr = await API.post('/settings/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
         s.logo_url = lr.data.logo_url;
       }
-      const { client_id, ...data } = s;
+      const { client_id, theme_css, selected_theme_id, selected_animation_id, ...data } = s;
       await API.put('/settings', data);
       toast.success('Parametres sauvegardes');
     } catch (err) { toast.error(err.response?.data?.detail || 'Erreur'); }
@@ -92,6 +93,23 @@ export default function SettingsPage() {
                   </label>
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Weather city */}
+        <Card>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><CloudSun className="h-4 w-4 text-sky-500" /> Meteo</CardTitle></CardHeader>
+          <CardContent>
+            <div className="max-w-xs space-y-1.5">
+              <Label className="text-xs">Ville pour la meteo</Label>
+              <Input
+                value={s.weather_city || ''}
+                onChange={e => up('weather_city', e.target.value)}
+                placeholder="Paris"
+                data-testid="weather-city-input"
+              />
+              <p className="text-[10px] text-slate-400">Nom de la ville affichee dans le widget meteo sur vos ecrans</p>
             </div>
           </CardContent>
         </Card>
@@ -149,6 +167,50 @@ export default function SettingsPage() {
                 </Select>
                 <p className="text-[10px] text-slate-400">Applique a toutes les diapos sans transition specifique</p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Eco mode */}
+        <Card>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" /> Mode eco</CardTitle></CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Activer le mode eco</p>
+                  <p className="text-[11px] text-slate-400">L'ecran passe en noir pendant la plage horaire definie</p>
+                </div>
+                <Switch
+                  checked={s.eco_mode_enabled || false}
+                  onCheckedChange={v => up('eco_mode_enabled', v)}
+                  data-testid="eco-mode-switch"
+                />
+              </div>
+              {s.eco_mode_enabled && (
+                <div className="flex items-center gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Debut (extinction)</Label>
+                    <Input
+                      type="time"
+                      value={s.eco_mode_start || '22:00'}
+                      onChange={e => up('eco_mode_start', e.target.value)}
+                      data-testid="eco-mode-start"
+                      className="w-32"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Fin (rallumage)</Label>
+                    <Input
+                      type="time"
+                      value={s.eco_mode_end || '07:00'}
+                      onChange={e => up('eco_mode_end', e.target.value)}
+                      data-testid="eco-mode-end"
+                      className="w-32"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

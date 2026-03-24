@@ -114,8 +114,13 @@ class SettingsUpdate(BaseModel):
     ticker_rss_enabled: Optional[bool] = None
     default_transition: Optional[str] = None
     custom_css: Optional[str] = None
+    theme_css: Optional[str] = None
     selected_theme_id: Optional[str] = None
     selected_animation_id: Optional[str] = None
+    weather_city: Optional[str] = None
+    eco_mode_enabled: Optional[bool] = None
+    eco_mode_start: Optional[str] = None
+    eco_mode_end: Optional[str] = None
     wysiwyg_size_small: Optional[int] = None
     wysiwyg_size_normal: Optional[int] = None
     wysiwyg_size_medium: Optional[int] = None
@@ -711,6 +716,15 @@ async def fetch_rss_batch(data: Dict[str, Any]):
     return {"items": all_items}
 
 # --- Flash Alert ---
+@api_router.get("/flash-alerts")
+async def list_flash_alerts(request: Request):
+    user = await get_current_user(request)
+    client_id = user["id"] if user["role"] == "client" else None
+    if not client_id:
+        raise HTTPException(status_code=400, detail="Acces non autorise")
+    alerts = await db.flash_alerts.find({"client_id": client_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return alerts
+
 @api_router.post("/flash-alert")
 async def create_flash_alert(data: FlashAlertCreate, request: Request):
     user = await get_current_user(request)
