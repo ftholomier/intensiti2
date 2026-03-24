@@ -18,7 +18,7 @@ services:
       MONGO_URL: mongodb://mongodb:27017
       DB_NAME: intensiti
       JWT_SECRET: ${JWT_SECRET:-intensiti-production-secret-key-2024}
-      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      CORS_ORIGINS: "*"
       OPENWEATHER_KEY: ${OPENWEATHER_KEY:-}
     volumes:
       - uploads_data:/app/uploads
@@ -29,7 +29,7 @@ services:
     build:
       context: ./frontend
       args:
-        REACT_APP_BACKEND_URL: ${REACT_APP_BACKEND_URL:-}
+        REACT_APP_BACKEND_URL: http://72.61.199.80:8080
     restart: unless-stopped
     depends_on:
       - backend
