@@ -332,7 +332,7 @@ export default function PlaylistEditor() {
   const addSlide = () => {
     const isSplit = addLayout === 'split' || addLayout === 'split-immersion';
     const s = {
-      id: crypto.randomUUID(),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       type: isSplit ? 'split' : addType,
       content: isSplit ? {} : { ...addContent },
       duration: parseInt(addDuration) || 10,
@@ -371,7 +371,7 @@ export default function PlaylistEditor() {
     updateAndSave(updated);
   };
   const duplicateSlide = (sl) => {
-    const updated = { ...playlist, slides: [...playlist.slides, { ...JSON.parse(JSON.stringify(sl)), id: crypto.randomUUID(), order: playlist.slides.length }] };
+    const updated = { ...playlist, slides: [...playlist.slides, { ...JSON.parse(JSON.stringify(sl)), id: Date.now().toString(36) + Math.random().toString(36).slice(2), order: playlist.slides.length }] };
     updateAndSave(updated);
     toast.success('Diapo dupliquee');
   };
