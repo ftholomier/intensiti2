@@ -7,40 +7,25 @@
 
 ## What's Been Implemented (Complete)
 
-### Content Types (7 types)
-Media, YouTube, QR Code, Countdown, Text (WYSIWYG), RSS, PDF (page-by-page)
+### Core
+- JWT auth (superadmin/client), Client/Screen/Media/Playlist CRUD
+- 7 content types, 4 layouts, DnD, auto-save, scheduling
+- Display page with transitions, force refresh, custom CSS injection
+- 48 themes (8 categories), 12 animations (new set: ruban, nebuleuse, flux, prisme, aurore, maille, horizon)
+- Flash Info alerts, Mode eco (time range), Weather city in settings
+- Bandeau defilant with speed up to 300s
+- Theme colors populate Settings for custom modifications (no !important CSS overrides)
+- Default palette: Onyx. Default sizes: time=32, date=22, weather=32, footer=22, header=100, footer=50
+- Default WYSIWYG: small=25, normal=40, medium=60, large=75, xlarge=90, huge=130
+- #emergent-badge hidden, crypto.randomUUID() fully replaced
 
-### Layouts (4 modes)
-100%, 50/50, Full Screen (immersion), 50/50 Full Screen (split-immersion)
-
-### Backend
-- JWT auth (superadmin/client), Client CRUD, Screen CRUD + heartbeat + force refresh
-- Media upload, Playlist CRUD + duplication + scheduling
-- Weather (current + 3-day forecast), RSS proxy (single + batch)
-- Display endpoint with scheduling logic + force_refresh + eco mode data
-- Settings: colors, sizes, logo, default_transition, theme_css (separate), custom_css, wysiwyg sizes, footer/rss items, ticker toggles, weather_city, eco_mode_enabled/start/end, selected_theme_id, selected_animation_id
-- Flash alerts: CRUD + list + dismiss
-- Ephemeris
-
-### Frontend
-- Role-based dashboard, Client management
-- Screen management + force refresh
-- Media library + YouTube URLs
-- Playlist Editor (DnD, 7 types, 50/50 split, auto-save, WYSIWYG 10 lines)
-- Playlist Scheduling (dates, days, months) + Rename
-- Bandeau defilant (dedicated page)
-- **Flash Info** (NEW): Send/dismiss/history alerts shown fullscreen on displays
-- **Themes** (48 themes, 8 categories) + **12 animations** (visible, professional)
-- **Settings**: Logo, Meteo city, Colors, Sizes, Transitions, Mode eco (time range), WYSIWYG sizes, CSS custom (theme CSS hidden)
-- **Display**: Seconds 2-digit, weather from settings, theme_css+custom_css injection, eco mode (black screen), #emergent-badge hidden, animation overlay
-- Toast: bottom-right
-
-## Docker
-- `backend/Dockerfile`, `frontend/Dockerfile`, `docker-compose.yml`
-- Frontend Nginx proxies /api/ to backend
+## Key Fixes (Latest Session)
+- Theme CSS no longer uses !important → settings colors apply correctly on Display
+- Eco mode saves default times (22:00-07:00) when toggled ON
+- Settings.up() uses functional state update (prev => ...)
 
 ## Test Results
-- iteration_9.json: 100% (17/17 backend, 11/11 frontend)
+- iteration_10.json: 100% (12/12 backend, 10/10 frontend)
 
 ## Credentials
 - Superadmin: admin@intensiti.com / admin123
@@ -50,11 +35,9 @@ Media, YouTube, QR Code, Countdown, Text (WYSIWYG), RSS, PDF (page-by-page)
 ### P1
 - Live preview in playlist editor
 - Statistics/reporting module
-- Heartbeat monitoring + alerts
 
 ### P2
-- Multi-screen dashboard, Ephemeris frontend
-- Playlist templates, Screen groups
+- Multi-screen dashboard, Ephemeris frontend, Playlist templates
 
 ### P3
-- Remote screenshot, Offline cache, 2FA, Export/import, Granular roles
+- Remote screenshot, Offline cache, 2FA, Granular roles
