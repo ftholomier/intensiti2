@@ -33,7 +33,7 @@ export default function TickerPage() {
   const footerItems = s?.footer_items || [];
   const addFooterItem = () => {
     if (!newFooterText.trim()) return;
-    up('footer_items', [...footerItems, { id: crypto.randomUUID(), text: newFooterText.trim(), is_active: true, order: footerItems.length }]);
+    up('footer_items', [...footerItems, { id: Date.now().toString(36) + Math.random().toString(36).slice(2), text: newFooterText.trim(), is_active: true, order: footerItems.length }]);
     setNewFooterText('');
   };
   const removeFooterItem = (id) => up('footer_items', footerItems.filter(i => i.id !== id).map((i, idx) => ({ ...i, order: idx })));
@@ -51,7 +51,7 @@ export default function TickerPage() {
   const rssItems = s?.rss_items || [];
   const addRssItem = () => {
     if (!newRssUrl.trim()) return;
-    up('rss_items', [...rssItems, { id: crypto.randomUUID(), url: newRssUrl.trim(), name: newRssName.trim() || newRssUrl.trim(), is_active: true, order: rssItems.length }]);
+    up('rss_items', [...rssItems, { id: Date.now().toString(36) + Math.random().toString(36).slice(2), url: newRssUrl.trim(), name: newRssName.trim() || newRssUrl.trim(), is_active: true, order: rssItems.length }]);
     setNewRssUrl(''); setNewRssName('');
   };
   const removeRssItem = (id) => up('rss_items', rssItems.filter(i => i.id !== id).map((i, idx) => ({ ...i, order: idx })));
@@ -172,7 +172,7 @@ export default function TickerPage() {
                   <Input value={s.footer_rss_url || ''} onChange={e => up('footer_rss_url', e.target.value)} className="flex-1 text-xs" />
                   <Button variant="outline" size="sm" onClick={() => {
                     if (s.footer_rss_url) {
-                      up('rss_items', [...rssItems, { id: crypto.randomUUID(), url: s.footer_rss_url, name: 'RSS migre', is_active: true, order: rssItems.length }]);
+                      up('rss_items', [...rssItems, { id: Date.now().toString(36) + Math.random().toString(36).slice(2), url: s.footer_rss_url, name: 'RSS migre', is_active: true, order: rssItems.length }]);
                       up('footer_rss_url', '');
                     }
                   }}>Migrer</Button>
