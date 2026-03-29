@@ -763,11 +763,19 @@ async def get_settings(request: Request):
     settings = await db.client_settings.find_one({"client_id": client_id}, {"_id": 0})
     if not settings:
         settings = {
-            "client_id": client_id, "logo_url": "", "primary_color": "#4F46E5",
-            "secondary_color": "#F1F5F9", "header_bg": "#1E293B", "footer_bg": "#1E293B",
-            "text_color": "#FFFFFF", "footer_text": "Bienvenue", "footer_rss_url": "",
+            "client_id": client_id, "logo_url": "", "primary_color": "#737373",
+            "secondary_color": "#171717",
+            "header_bg": "#0A0A0A", "footer_bg": "#171717", "content_bg": "#000000",
+            "text_color": "#F5F5F5", "block_bg": "rgba(245,245,245,0.04)", "block_text_color": "#E5E5E5",
+            "footer_text": "Bienvenue", "footer_rss_url": "",
             "rss_items": [], "ticker_speed": 30,
-            "ticker_text_enabled": True, "ticker_rss_enabled": True
+            "ticker_text_enabled": True, "ticker_rss_enabled": True,
+            "time_font_size": 32, "date_font_size": 22, "weather_font_size": 32, "footer_font_size": 22,
+            "header_height": 100, "footer_height": 50, "block_padding_v": 4, "block_padding_h": 14,
+            "wysiwyg_size_small": 25, "wysiwyg_size_normal": 40, "wysiwyg_size_medium": 60,
+            "wysiwyg_size_large": 75, "wysiwyg_size_xlarge": 90, "wysiwyg_size_huge": 130,
+            "selected_theme_id": "onyx", "selected_animation_id": "none",
+            "default_transition": "fade"
         }
         await db.client_settings.insert_one(settings)
         settings.pop("_id", None)

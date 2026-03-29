@@ -307,7 +307,7 @@ export default function Display() {
     boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)',
     color: s.block_text_color || s.text_color || '#fff',
     display: 'flex', alignItems: 'center', gap: '6px',
-    height: `${Math.max((s.header_height || 72) - 24, 32)}px`,
+    height: `${Math.max((s.header_height || 100) - 24, 32)}px`,
   };
 
   if (err) return (
@@ -322,12 +322,13 @@ export default function Display() {
 
   // Build WYSIWYG font size CSS
   const fontSizeCSS = `
-    .display-text-content font[size="1"] { font-size: ${s.wysiwyg_size_small || 12}px !important; }
-    .display-text-content font[size="2"] { font-size: ${s.wysiwyg_size_normal || 16}px !important; }
-    .display-text-content font[size="3"] { font-size: ${s.wysiwyg_size_medium || 20}px !important; }
-    .display-text-content font[size="4"] { font-size: ${s.wysiwyg_size_large || 28}px !important; }
-    .display-text-content font[size="5"] { font-size: ${s.wysiwyg_size_xlarge || 40}px !important; }
-    .display-text-content font[size="6"], .display-text-content font[size="7"] { font-size: ${s.wysiwyg_size_huge || 56}px !important; }
+    .display-text-content { color: ${s.text_color || '#fff'}; }
+    .display-text-content font[size="1"] { font-size: ${s.wysiwyg_size_small || 25}px !important; }
+    .display-text-content font[size="2"] { font-size: ${s.wysiwyg_size_normal || 40}px !important; }
+    .display-text-content font[size="3"] { font-size: ${s.wysiwyg_size_medium || 60}px !important; }
+    .display-text-content font[size="4"] { font-size: ${s.wysiwyg_size_large || 75}px !important; }
+    .display-text-content font[size="5"] { font-size: ${s.wysiwyg_size_xlarge || 90}px !important; }
+    .display-text-content font[size="6"], .display-text-content font[size="7"] { font-size: ${s.wysiwyg_size_huge || 130}px !important; }
   `;
 
   // Eco mode check
@@ -363,10 +364,10 @@ export default function Display() {
 
       {/* HEADER */}
       <div className="absolute top-0 left-0 w-full z-20 transition-all duration-700 ease-out"
-        style={{ height: immersion ? 0 : `${s.header_height || 72}px`, opacity: immersion ? 0 : 1, overflow: 'hidden' }} data-testid="display-header">
+        style={{ height: immersion ? 0 : `${s.header_height || 100}px`, opacity: immersion ? 0 : 1, overflow: 'hidden' }} data-testid="display-header">
         <div className="h-full w-full flex items-center justify-between px-5" style={{ backgroundColor: s.header_bg || '#0F172A' }}>
           <div style={blockStyle}>
-            {s.logo_url ? <img src={getMediaUrl(s.logo_url)} alt="" style={{ height: `${Math.max((s.header_height || 72) - 36, 20)}px`, objectFit: 'contain' }} /> : <span className="font-bold tracking-tight" style={{ color: s.block_text_color || '#fff' }}>Intensiti</span>}
+            {s.logo_url ? <img src={getMediaUrl(s.logo_url)} alt="" style={{ height: `${Math.max((s.header_height || 100) - 36, 20)}px`, objectFit: 'contain' }} /> : <span className="font-bold tracking-tight" style={{ color: s.block_text_color || '#fff' }}>Intensiti</span>}
           </div>
           <div className="flex items-center gap-3">
             <div style={blockStyle}>
@@ -374,13 +375,13 @@ export default function Display() {
               <span className="font-mono opacity-40" style={{ fontSize: `${Math.max((s.time_font_size || 32) * 0.4, 10)}px` }}>{secStr}</span>
             </div>
             <div style={blockStyle} className="hidden md:flex">
-              <span className="font-medium capitalize" style={{ fontSize: `${s.date_font_size || 14}px`, opacity: 0.85 }}>{dateStr}</span>
+              <span className="font-medium capitalize" style={{ fontSize: `${s.date_font_size || 22}px`, opacity: 0.85 }}>{dateStr}</span>
             </div>
             {weather && weather.temp != null && (
               <div style={blockStyle}>
                 <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt="" className="w-9 h-9 -ml-1" />
                 <div>
-                  <span className="font-bold" style={{ fontSize: `${s.weather_font_size || 18}px` }}>{weather.temp}&#176;</span>
+                  <span className="font-bold" style={{ fontSize: `${s.weather_font_size || 32}px` }}>{weather.temp}&#176;</span>
                   <p className="leading-none capitalize" style={{ fontSize: '10px', opacity: 0.5 }}>{weather.city}</p>
                 </div>
                 {forecast.length > 0 && (
@@ -402,7 +403,7 @@ export default function Display() {
 
       {/* MAIN */}
       <div className="absolute left-0 w-full z-10 transition-all duration-700 ease-out"
-        style={{ top: immersion ? 0 : `${s.header_height || 72}px`, bottom: immersion ? 0 : `${s.footer_height || 44}px`, backgroundColor: s.content_bg || '#000' }} data-testid="display-main">
+        style={{ top: immersion ? 0 : `${s.header_height || 100}px`, bottom: immersion ? 0 : `${s.footer_height || 50}px`, background: `linear-gradient(160deg, ${s.content_bg || '#000'} 0%, ${s.header_bg || '#0F172A'} 100%)` }} data-testid="display-main">
         {slides.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950">
             <p className="text-7xl md:text-9xl font-mono font-bold tracking-[0.4em] bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-6">{scr.pairing_code}</p>
@@ -424,12 +425,12 @@ export default function Display() {
 
       {/* FOOTER */}
       <div className="absolute bottom-0 left-0 w-full z-20 transition-all duration-700 ease-out"
-        style={{ height: immersion ? 0 : `${s.footer_height || 44}px`, opacity: immersion ? 0 : 1, overflow: 'hidden' }} data-testid="display-footer">
+        style={{ height: immersion ? 0 : `${s.footer_height || 50}px`, opacity: immersion ? 0 : 1, overflow: 'hidden' }} data-testid="display-footer">
         <div className="h-full w-full flex items-center" style={{ backgroundColor: s.footer_bg || '#0F172A' }}>
           <div className="display-ticker" style={{ '--ticker-bg': s.footer_bg || '#0F172A' }}>
             <span className="display-ticker-text" style={{
               color: s.text_color || '#fff',
-              fontSize: `${s.footer_font_size || 15}px`,
+              fontSize: `${s.footer_font_size || 22}px`,
               animationDuration: `${tickerSpeed}s`
             }}>
               {tickerText}&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;{tickerText}&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;

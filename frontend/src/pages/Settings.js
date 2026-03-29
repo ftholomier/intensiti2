@@ -43,9 +43,20 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
 
-  useEffect(() => { API.get('/settings').then(r => setS(r.data)).catch(() => {}); }, []);
+  useEffect(() => {
+    API.get('/settings').then(r => {
+      const defaults = {
+        time_font_size: 32, date_font_size: 22, weather_font_size: 32, footer_font_size: 22,
+        header_height: 100, footer_height: 50, block_padding_v: 4, block_padding_h: 14,
+        wysiwyg_size_small: 25, wysiwyg_size_normal: 40, wysiwyg_size_medium: 60,
+        wysiwyg_size_large: 75, wysiwyg_size_xlarge: 90, wysiwyg_size_huge: 130,
+        ticker_speed: 30,
+      };
+      setS({ ...defaults, ...r.data });
+    }).catch(() => {});
+  }, []);
 
-  const up = (field, val) => setS({ ...s, [field]: val });
+  const up = (field, val) => setS(prev => ({ ...prev, [field]: val }));
 
   const handleSave = async () => {
     setSaving(true);
@@ -183,7 +194,11 @@ export default function SettingsPage() {
                 </div>
                 <Switch
                   checked={s.eco_mode_enabled || false}
-                  onCheckedChange={v => up('eco_mode_enabled', v)}
+                  onCheckedChange={v => {
+                    up('eco_mode_enabled', v);
+                    if (v && !s.eco_mode_start) up('eco_mode_start', '22:00');
+                    if (v && !s.eco_mode_end) up('eco_mode_end', '07:00');
+                  }}
                   data-testid="eco-mode-switch"
                 />
               </div>

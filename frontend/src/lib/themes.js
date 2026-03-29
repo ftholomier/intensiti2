@@ -11,11 +11,7 @@ function makeTheme(id, name, category, desc, colors) {
       text_color: text, block_bg: block || 'rgba(0,0,0,0.06)', block_text_color: blockText || text,
       primary_color: primary,
     },
-    css: `/* THEME:${id} */
-.display-text-content { color: ${text}; }
-[data-testid="display-header"] > div { background: ${header} !important; }
-[data-testid="display-footer"] > div { background: ${footer} !important; }
-[data-testid="display-main"] { background: linear-gradient(160deg, ${content} 0%, ${header} 100%) !important; }`,
+    css: `/* THEME:${id} */`,
   };
 }
 

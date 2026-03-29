@@ -78,7 +78,7 @@ export default function TickerPage() {
           <CardContent>
             <div className="flex items-center gap-4 max-w-md">
               <span className="text-xs text-slate-400 w-12">Rapide</span>
-              <input type="range" min="10" max="120" value={s.ticker_speed || 30}
+              <input type="range" min="10" max="300" value={s.ticker_speed || 30}
                 onChange={e => up('ticker_speed', parseInt(e.target.value))}
                 className="flex-1 h-2 accent-primary cursor-pointer" data-testid="ticker-speed-slider" />
               <span className="text-xs text-slate-400 w-12 text-right">Lent</span>
