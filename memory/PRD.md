@@ -5,39 +5,34 @@
 - **Frontend**: React + Tailwind CSS + Shadcn UI + @dnd-kit + react-pdf
 - **Deployment**: Docker Compose (MongoDB + Backend + Frontend/Nginx)
 
-## What's Been Implemented (Complete)
+## What's Been Implemented
 
 ### Core
-- JWT auth (superadmin/client), Client/Screen/Media/Playlist CRUD
-- 7 content types, 4 layouts, DnD, auto-save, scheduling
-- Display page with transitions, force refresh, custom CSS injection
-- 48 themes (8 categories), 12 animations (new set: ruban, nebuleuse, flux, prisme, aurore, maille, horizon)
-- Flash Info alerts, Mode eco (time range), Weather city in settings
-- Bandeau defilant with speed up to 300s
-- Theme colors populate Settings for custom modifications (no !important CSS overrides)
-- Default palette: Onyx. Default sizes: time=32, date=22, weather=32, footer=22, header=100, footer=50
-- Default WYSIWYG: small=25, normal=40, medium=60, large=75, xlarge=90, huge=130
-- #emergent-badge hidden, crypto.randomUUID() fully replaced
+- JWT auth, Client/Screen/Media/Playlist CRUD, 7 content types, 4 layouts
+- DnD, auto-save, scheduling (days/months/dates), rename, duplicate
+- Display: transitions, force refresh, custom CSS, eco mode, animation overlay
+- 48 themes (8 cat), 12 animations, Flash Info alerts
+- Bandeau defilant (speed up to 300s), Weather city/icon size in settings
 
-## Key Fixes (Latest Session)
-- Theme CSS no longer uses !important → settings colors apply correctly on Display
-- Eco mode saves default times (22:00-07:00) when toggled ON
-- Settings.up() uses functional state update (prev => ...)
+### Latest Changes (This Session)
+- **Text color applied everywhere**: RSS uses settings textColor, PDF bg transparent
+- **RSS customizable**: title badge + pause between slides configurable per slide
+- **PDF pause**: page_duration already configurable
+- **YouTube from media**: Fixed SingleContent to handle media+youtube type
+- **Dashboard pro**: Stat cards with navigation, media distribution chart, recent playlists, screen list
+- **Media library**: Image/YouTube thumbnails, preview dialog (image/video/PDF/YouTube)
+- **Playlist thumbnails**: Real slide content previews instead of grey squares
+- **Weather icon size**: New setting field
+- **Screen creation**: Default header=100, footer=50
 
 ## Test Results
-- iteration_10.json: 100% (12/12 backend, 10/10 frontend)
+- iteration_11.json: 100% (17/17 backend, 12/12 frontend)
 
 ## Credentials
 - Superadmin: admin@intensiti.com / admin123
 - Client: demo@test.com / demo123
 
 ## Prioritized Backlog
-### P1
-- Live preview in playlist editor
-- Statistics/reporting module
-
-### P2
-- Multi-screen dashboard, Ephemeris frontend, Playlist templates
-
-### P3
-- Remote screenshot, Offline cache, 2FA, Granular roles
+### P1 - Live preview in playlist editor, Statistics/reporting module
+### P2 - Multi-screen dashboard, Ephemeris frontend, Playlist templates
+### P3 - Remote screenshot, Offline cache, 2FA, Granular roles
