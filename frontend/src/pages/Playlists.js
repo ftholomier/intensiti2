@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import API from '../lib/api';
+import API, { getMediaUrl } from '../lib/api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -10,7 +10,7 @@ import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Calendar } from '../components/ui/calendar';
-import { Plus, ListVideo, Edit, Trash2, Copy, CalendarIcon, Clock, X, Pencil } from 'lucide-react';
+import { Plus, ListVideo, Edit, Trash2, Copy, CalendarIcon, Clock, X, Pencil, Image, Film, FileText, Link, Type, Rss } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -196,9 +196,20 @@ export default function Playlists() {
 
                 {/* Slide preview strip */}
                 <div className="flex gap-1 mb-4 h-12 overflow-hidden rounded-md bg-slate-50 p-1">
-                  {(pl.slides || []).slice(0, 6).map((_, i) => (
-                    <div key={i} className="h-full aspect-video bg-slate-200 rounded-sm shrink-0" />
-                  ))}
+                  {(pl.slides || []).slice(0, 6).map((slide, i) => {
+                    const c = slide.content || {};
+                    const t = slide.type;
+                    const thumb = (t === 'media' && c.type === 'image') ? getMediaUrl(c.url)
+                      : (t === 'media' && c.type === 'youtube' || t === 'youtube') ? (() => { const m = (c.url || '').match(/(?:v=|\/embed\/|\.be\/)([a-zA-Z0-9_-]{11})/); return m ? `https://img.youtube.com/vi/${m[1]}/default.jpg` : null; })()
+                      : null;
+                    const TypeIcon = t === 'text' ? Type : t === 'rss' ? Rss : t === 'pdf' || (t === 'media' && c.type === 'pdf') ? FileText : t === 'media' && c.type === 'video' ? Film : t === 'qrcode' ? Link : Image;
+                    return (
+                      <div key={i} className="h-full aspect-video rounded-sm shrink-0 overflow-hidden relative bg-slate-200">
+                        {thumb ? <img src={thumb} alt="" className="w-full h-full object-cover" />
+                          : <div className="flex items-center justify-center h-full"><TypeIcon className="h-3.5 w-3.5 text-slate-400" /></div>}
+                      </div>
+                    );
+                  })}
                   {(!pl.slides || pl.slides.length === 0) && (
                     <div className="flex items-center justify-center w-full text-xs text-slate-400">
                       Aucune diapo

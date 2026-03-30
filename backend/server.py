@@ -121,6 +121,7 @@ class SettingsUpdate(BaseModel):
     eco_mode_enabled: Optional[bool] = None
     eco_mode_start: Optional[str] = None
     eco_mode_end: Optional[str] = None
+    weather_icon_size: Optional[int] = None
     wysiwyg_size_small: Optional[int] = None
     wysiwyg_size_normal: Optional[int] = None
     wysiwyg_size_medium: Optional[int] = None
@@ -315,9 +316,12 @@ async def create_screen(data: ScreenCreate, request: Request):
         "group": data.group,
         "tags": data.tags,
         "settings": {
-            "header_bg": "#1E293B",
-            "footer_bg": "#1E293B",
-            "text_color": "#FFFFFF",
+            "header_bg": "#0A0A0A",
+            "footer_bg": "#171717",
+            "content_bg": "#000000",
+            "text_color": "#F5F5F5",
+            "header_height": 100,
+            "footer_height": 50,
             "immersion": False
         },
         "created_at": datetime.now(timezone.utc).isoformat()

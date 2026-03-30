@@ -122,6 +122,9 @@ export default function SettingsPage() {
               />
               <p className="text-[10px] text-slate-400">Nom de la ville affichee dans le widget meteo sur vos ecrans</p>
             </div>
+            <div className="max-w-xs space-y-1.5 mt-3">
+              <NumField label="Taille de l'icone meteo" value={s.weather_icon_size} onChange={v => up('weather_icon_size', v)} unit="px" min={16} max={80} />
+            </div>
           </CardContent>
         </Card>
 

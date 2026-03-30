@@ -488,6 +488,10 @@ export default function PlaylistEditor() {
               <TabsContent value="rss" className="mt-4 space-y-3">
                 <Label>URL du flux RSS</Label>
                 <Input value={addContent.rss_url || ''} onChange={e => setAddContent({ ...addContent, rss_url: e.target.value })} placeholder="https://example.com/rss.xml" data-testid="slide-rss-url" className="max-w-xl" />
+                <div className="grid grid-cols-2 gap-3 max-w-xl">
+                  <div><Label className="text-xs">Titre de la pastille</Label><Input className="mt-1" value={addContent.rss_title || ''} onChange={e => setAddContent({ ...addContent, rss_title: e.target.value })} placeholder="Flux RSS" /></div>
+                  <div><Label className="text-xs">Pause entre les titres (sec)</Label><Input type="number" className="mt-1" value={addContent.rss_pause || 6} onChange={e => setAddContent({ ...addContent, rss_pause: parseInt(e.target.value) || 6 })} min="2" max="60" /></div>
+                </div>
                 <p className="text-[11px] text-slate-400">Les titres du flux RSS seront affiches en plein ecran.</p>
               </TabsContent>
               <TabsContent value="pdf" className="mt-4 space-y-3">
@@ -568,9 +572,13 @@ export default function PlaylistEditor() {
                     </div>
                   )}
                   {editSlide.type === 'rss' && (
-                    <div className="space-y-2 max-w-xl">
-                      <Label>URL du flux RSS</Label>
-                      <Input value={editSlide.content?.rss_url || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, rss_url: e.target.value } })} placeholder="https://example.com/rss.xml" />
+                    <div className="space-y-3 max-w-xl">
+                      <div><Label>URL du flux RSS</Label>
+                      <Input className="mt-1" value={editSlide.content?.rss_url || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, rss_url: e.target.value } })} placeholder="https://example.com/rss.xml" /></div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div><Label className="text-xs">Titre de la pastille</Label><Input className="mt-1" value={editSlide.content?.rss_title || ''} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, rss_title: e.target.value } })} placeholder="Flux RSS" /></div>
+                        <div><Label className="text-xs">Pause entre les titres (sec)</Label><Input type="number" className="mt-1" value={editSlide.content?.rss_pause || 6} onChange={e => setEditSlide({ ...editSlide, content: { ...editSlide.content, rss_pause: parseInt(e.target.value) || 6 } })} min="2" max="60" /></div>
+                      </div>
                     </div>
                   )}
                   {editSlide.type === 'pdf' && (

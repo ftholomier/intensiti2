@@ -42,7 +42,7 @@ function CountdownWidget({ targetDate, label }) {
 }
 
 /* RSS Slide */
-function RssSlideContent({ rssUrl }) {
+function RssSlideContent({ rssUrl, textColor, rssTitle, rssPause }) {
   const [items, setItems] = useState([]);
   const [ci, setCi] = useState(0);
   useEffect(() => {
@@ -52,14 +52,14 @@ function RssSlideContent({ rssUrl }) {
   }, [rssUrl]);
   useEffect(() => {
     if (items.length <= 1) return;
-    const i = setInterval(() => setCi(p => (p + 1) % items.length), 6000);
+    const i = setInterval(() => setCi(p => (p + 1) % items.length), (rssPause || 6) * 1000);
     return () => clearInterval(i);
-  }, [items.length]);
-  if (items.length === 0) return <div className="flex items-center justify-center h-full text-white/30">Chargement du flux RSS...</div>;
+  }, [items.length, rssPause]);
+  if (items.length === 0) return <div className="flex items-center justify-center h-full opacity-30">Chargement du flux RSS...</div>;
   return (
-    <div className="flex flex-col items-center justify-center h-full px-12 text-white">
+    <div className="flex flex-col items-center justify-center h-full px-12" style={{ color: textColor || '#fff' }}>
       <div className="text-center max-w-4xl">
-        <div className="inline-block px-4 py-1.5 bg-orange-500/20 text-orange-300 rounded-full text-xs uppercase tracking-widest font-medium mb-8">Flux RSS</div>
+        <div className="inline-block px-4 py-1.5 bg-orange-500/20 text-orange-300 rounded-full text-xs uppercase tracking-widest font-medium mb-8">{rssTitle || 'Flux RSS'}</div>
         <p className="text-3xl md:text-5xl font-bold leading-tight animate-fade-in-display" key={ci}>{items[ci]}</p>
       </div>
     </div>
@@ -102,7 +102,7 @@ function PdfSlideContent({ url, pageDuration, onAllPagesShown }) {
   const pdfUrl = url ? getMediaUrl(url) : null;
 
   return (
-    <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full bg-white relative overflow-hidden">
+    <div ref={containerRef} className="flex flex-col items-center justify-center h-full w-full relative overflow-hidden" style={{ backgroundColor: 'transparent' }}>
       {pdfUrl && (
         <Document file={pdfUrl} onLoadSuccess={onDocumentLoadSuccess}
           loading={<div className="text-slate-400 text-lg">Chargement du PDF...</div>}
@@ -121,37 +121,38 @@ function PdfSlideContent({ url, pageDuration, onAllPagesShown }) {
 }
 
 /* Single Content */
-function SingleContent({ type, content, fitMode, onDone }) {
+function SingleContent({ type, content, fitMode, onDone, textColor }) {
   const c = content || {};
   const fit = fitMode === 'fill' ? 'cover' : 'contain';
   if (type === 'media' && c.type === 'image') return <img src={getMediaUrl(c.url)} alt="" className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
   if (type === 'media' && c.type === 'video') return <video src={getMediaUrl(c.url)} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full" style={{ objectFit: fit }} />;
   if (type === 'media' && c.type === 'pdf') return <PdfSlideContent url={c.url} pageDuration={c.page_duration} onAllPagesShown={onDone} />;
+  if (type === 'media' && c.type === 'youtube') { const ytId = extractYouTubeId(c.url); return ytId ? <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0`} className="absolute inset-0 w-full h-full" frameBorder="0" allow="autoplay" allowFullScreen title="YT" /> : null; }
   if (type === 'youtube') { const ytId = extractYouTubeId(c.url); return ytId ? <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0`} className="absolute inset-0 w-full h-full" frameBorder="0" allow="autoplay" allowFullScreen title="YT" /> : null; }
   if (type === 'qrcode') return <div className="flex flex-col items-center justify-center h-full"><div className="bg-white p-6 md:p-8 rounded-2xl shadow-2xl shadow-white/10"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(c.url || 'https://example.com')}`} alt="QR" className="w-48 h-48 md:w-64 md:h-64" /></div></div>;
   if (type === 'countdown') return <CountdownWidget targetDate={c.target_date} label={c.label} />;
   if (type === 'text') return <div className="flex items-center justify-center h-full px-8 md:px-20"><div className="display-text-content" dangerouslySetInnerHTML={{ __html: c.html || c.text || '' }} /></div>;
-  if (type === 'rss') return <RssSlideContent rssUrl={c.rss_url} />;
+  if (type === 'rss') return <RssSlideContent rssUrl={c.rss_url} textColor={textColor} rssTitle={c.rss_title} rssPause={c.rss_pause} />;
   if (type === 'pdf') return <PdfSlideContent url={c.url} pageDuration={c.page_duration} onAllPagesShown={onDone} />;
   return null;
 }
 
 /* Slide Content */
-function SlideContent({ slide, onDone }) {
+function SlideContent({ slide, onDone, textColor }) {
   if (!slide) return null;
   if (slide.layout === 'split' || slide.layout === 'split-immersion') {
     return (
       <div className="flex w-full h-full">
         <div className="w-1/2 h-full relative overflow-hidden border-r border-white/5">
-          <SingleContent type={slide.split_left_type || slide.type} content={slide.split_left_content || slide.content} fitMode={slide.fit_mode} />
+          <SingleContent type={slide.split_left_type || slide.type} content={slide.split_left_content || slide.content} fitMode={slide.fit_mode} textColor={textColor} />
         </div>
         <div className="w-1/2 h-full relative overflow-hidden">
-          <SingleContent type={slide.split_right_type || slide.type} content={slide.split_right_content || {}} fitMode={slide.fit_mode} />
+          <SingleContent type={slide.split_right_type || slide.type} content={slide.split_right_content || {}} fitMode={slide.fit_mode} textColor={textColor} />
         </div>
       </div>
     );
   }
-  return <SingleContent type={slide.type} content={slide.content} fitMode={slide.fit_mode} onDone={onDone} />;
+  return <SingleContent type={slide.type} content={slide.content} fitMode={slide.fit_mode} onDone={onDone} textColor={textColor} />;
 }
 
 const DAYS_FR = { monday: 'Lun', tuesday: 'Mar', wednesday: 'Mer', thursday: 'Jeu', friday: 'Ven', saturday: 'Sam', sunday: 'Dim' };
@@ -379,7 +380,7 @@ export default function Display() {
             </div>
             {weather && weather.temp != null && (
               <div style={blockStyle}>
-                <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt="" className="w-9 h-9 -ml-1" />
+                <img src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} alt="" style={{ width: `${s.weather_icon_size || 36}px`, height: `${s.weather_icon_size || 36}px`, marginLeft: '-4px' }} />
                 <div>
                   <span className="font-bold" style={{ fontSize: `${s.weather_font_size || 32}px` }}>{weather.temp}&#176;</span>
                   <p className="leading-none capitalize" style={{ fontSize: '10px', opacity: 0.5 }}>{weather.city}</p>
@@ -414,10 +415,10 @@ export default function Display() {
             {/* Animation overlay - driven by custom CSS */}
             <div data-testid="display-animation-overlay" />
             {trans && pi >= 0 && pi < slides.length && (
-              <div className={`absolute inset-0 z-10 ${getTransClass(slides[pi], false)}`}><SlideContent slide={slides[pi]} /></div>
+              <div className={`absolute inset-0 z-10 ${getTransClass(slides[pi], false)}`}><SlideContent slide={slides[pi]} textColor={s.text_color} /></div>
             )}
             <div className={`absolute inset-0 z-20 ${trans ? getTransClass(slides[ci], true) : ''}`}>
-              <SlideContent slide={slides[ci]} onDone={handlePdfDone} />
+              <SlideContent slide={slides[ci]} onDone={handlePdfDone} textColor={s.text_color} />
             </div>
           </div>
         )}
